@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from datetime import datetime, timedelta
 from ...db.db import db
 from ...models.user_model import UserModel, OTPModel
-from ...schemas.user_schema import UserSignup, UserLogin, VerifyOTP, Token, GoogleLogin
+from ...schemas.user_schema import UserSignup, UserLogin, VerifyOTP, Token, GoogleLogin, ForgotPasswordRequest, ResetPassword
 from ...core.auth_utils import get_password_hash, verify_password, create_access_token, generate_otp
 from ...services.email_service import send_otp_email
 from google.oauth2 import id_token
@@ -77,6 +77,45 @@ async def verify_otp(data: VerifyOTP):
     # Generate token
     access_token = create_access_token(data={"sub": data.email})
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/forgot-password")
+async def forgot_password(data: ForgotPasswordRequest):
+    # Always return 200 to prevent email enumeration
+    user = await db.users.find_one({"email": data.email})
+    if user:
+        otp = generate_otp()
+        await db.otps.update_one(
+            {"email": data.email},
+            {"$set": {"otp": otp, "created_at": datetime.utcnow(), "purpose": "reset"},
+             "$setOnInsert": {"email": data.email}},
+            upsert=True
+        )
+        email_sent = await send_otp_email(data.email, otp)
+        if not email_sent:
+            logger.warning(f"Failed to send reset OTP to {data.email}")
+    return {"message": "If that email is registered, an OTP has been sent."}
+
+
+@router.post("/reset-password")
+async def reset_password(data: ResetPassword):
+    otp_record = await db.otps.find_one({"email": data.email, "otp": data.otp})
+    if not otp_record:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    if datetime.utcnow() - otp_record["created_at"] > timedelta(minutes=5):
+        await db.otps.delete_one({"_id": otp_record["_id"]})
+        raise HTTPException(status_code=400, detail="OTP expired. Please request a new one.")
+
+    # Update password
+    hashed = get_password_hash(data.new_password)
+    await db.users.update_one(
+        {"email": data.email},
+        {"$set": {"hashed_password": hashed}}
+    )
+    await db.otps.delete_one({"_id": otp_record["_id"]})
+
+    return {"message": "Password reset successful. You can now log in."}
 
 @router.post("/login", response_model=Token)
 async def login(credentials: UserLogin):

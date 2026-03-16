@@ -1,9 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/home/home';
-import Login from './pages/auth/Login';
-import Signup from './pages/auth/Signup';
+import Login from './pages/Auth/login';
+import Signup from './pages/Auth/signup';
 import UrlMon from './pages/Dashboard/UrlMon';
 import Dashboard from './pages/Dashboard/Dashboard';
+import ForgotPassword from './pages/Auth/ForgotPassword';
 import { AuthProvider, useAuth } from './context/authContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -28,6 +29,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/forget-password" element={<Navigate to="/forgot-password" />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/url-mon" element={<ProtectedRoute><UrlMon /></ProtectedRoute>} />
         </Routes>

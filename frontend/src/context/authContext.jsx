@@ -73,13 +73,35 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
+    const forgotPassword = async (email) => {
+        const response = await fetch(`${API_URL}/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || 'Request failed');
+        return data;
+    };
+
+    const resetPassword = async (email, otp, newPassword) => {
+        const response = await fetch(`${API_URL}/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, otp, new_password: newPassword }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || 'Reset failed');
+        return data;
+    };
+
     const logout = () => {
         localStorage.removeItem("token");
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, signup, verifyOtp, googleLogin, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, signup, verifyOtp, googleLogin, forgotPassword, resetPassword, logout }}>
             {children}
         </AuthContext.Provider>
     );
