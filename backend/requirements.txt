@@ -10,3 +10,4 @@ google-auth
 requests
 motor
 email-validator
+sendgrid

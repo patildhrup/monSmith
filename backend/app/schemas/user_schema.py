@@ -1,10 +1,26 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
+import re
 from typing import Optional
 
 class UserSignup(BaseModel):
     email: EmailStr
     password: str
     full_name: Optional[str] = None
+
+    @field_validator('password')
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        if len(v) > 72:
+            raise ValueError('Password must be no longer than 72 characters (encryption limit)')
+        if not re.search(r"[A-Z]", v):
+            raise ValueError('Password must contain at least one capital letter')
+        if not re.search(r"\d", v):
+            raise ValueError('Password must contain at least one number')
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", v):
+            raise ValueError('Password must contain at least one special character')
+        return v
 
 class UserLogin(BaseModel):
     email: EmailStr

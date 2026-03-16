@@ -10,9 +10,15 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="monSmith API")
 
 # CORS configuration
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, specify frontend URL
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -24,6 +30,7 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 @app.get("/")
 async def root():
     return {"message": "Welcome to monSmith API"}
+
 
 if __name__ == "__main__":
     import uvicorn

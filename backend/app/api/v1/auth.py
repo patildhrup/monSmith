@@ -64,8 +64,8 @@ async def verify_otp(data: VerifyOTP):
     if not otp_record:
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
-    # Check expiry (10 mins)
-    if datetime.utcnow() - otp_record["created_at"] > timedelta(minutes=10):
+    # Check expiry (5 mins)
+    if datetime.utcnow() - otp_record["created_at"] > timedelta(minutes=5):
         raise HTTPException(status_code=400, detail="OTP expired")
     
     # Mark user as verified

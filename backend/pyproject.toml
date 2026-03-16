@@ -8,4 +8,5 @@ dependencies = [
     "google-auth>=2.49.1",
     "i>=2.1.0",
     "pip>=26.0.1",
+    "sendgrid>=6.12.5",
 ]
