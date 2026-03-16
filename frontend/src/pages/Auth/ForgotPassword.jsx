@@ -85,6 +85,14 @@ const ForgotPassword = () => {
     const [loading, setLoading] = useState(false);
     const [resendTimer, setResendTimer] = useState(0);
 
+    const passwordRequirements = [
+        { label: 'At least 8 characters', test: (p) => p.length >= 8 },
+        { label: 'At least one uppercase letter (A–Z)', test: (p) => /[A-Z]/.test(p) },
+        { label: 'At least one lowercase letter (a–z)', test: (p) => /[a-z]/.test(p) },
+        { label: 'At least one number (0–9)', test: (p) => /\d/.test(p) },
+        { label: 'At least one special character (!@#$%^&*)', test: (p) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+    ];
+
     const { forgotPassword, resetPassword } = useAuth();
     const navigate = useNavigate();
 
@@ -143,7 +151,7 @@ const ForgotPassword = () => {
             await resetPassword(email, otp, newPassword);
             setStep(3);
         } catch (err) {
-            setError(err.message);
+            setError(err.message || 'Reset failed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -264,7 +272,21 @@ const ForgotPassword = () => {
                                     onChange={e => setNewPassword(e.target.value)}
                                 />
                             </div>
-                            <p className="text-xs text-slate-600 ml-1">Min 8 chars · uppercase · number · special char</p>
+                            
+                            {/* Password Requirements Checklist */}
+                            <div className="mt-3 p-3 bg-white/[0.02] border border-white/5 rounded-2xl space-y-2">
+                                {passwordRequirements.map((req, i) => {
+                                    const isMet = req.test(newPassword);
+                                    return (
+                                        <div key={i} className="flex items-center gap-2 transition-all duration-300">
+                                            <div className={`w-1.5 h-1.5 rounded-full ${isMet ? 'bg-primary shadow-[0_0_8px_rgba(0,156,0,0.6)]' : 'bg-slate-700'}`} />
+                                            <span className={`text-[11px] font-medium leading-none ${isMet ? 'text-primary' : 'text-slate-500'}`}>
+                                                {req.label}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1" htmlFor="conf-pass">Confirm Password</label>

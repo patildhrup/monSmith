@@ -10,14 +10,35 @@ export const AuthProvider = ({ children }) => {
 
     const API_URL = "http://localhost:8000/api/v1/auth";
 
-    useEffect(() => {
+    const fetchProfile = async () => {
         const token = localStorage.getItem("token");
-        if (token) {
-            // In a real app, you'd fetch the user profile here
-            // For now, we'll decode the JWT sub if needed or just set as authenticated
-            setUser({ authenticated: true });
+        if (!token) {
+            setLoading(false);
+            return;
         }
-        setLoading(false);
+        
+        try {
+            const response = await fetch(`${API_URL}/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setUser(data);
+            } else {
+                localStorage.removeItem("token");
+                setUser(null);
+            }
+        } catch (err) {
+            console.error("Failed to fetch profile:", err);
+            localStorage.removeItem("token");
+            setUser(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchProfile();
     }, []);
 
     const login = async (email, password) => {
@@ -30,7 +51,7 @@ export const AuthProvider = ({ children }) => {
         if (!response.ok) throw new Error(data.detail || 'Login failed');
         
         localStorage.setItem("token", data.access_token);
-        setUser({ authenticated: true });
+        await fetchProfile();
         return data;
     };
 
@@ -55,7 +76,7 @@ export const AuthProvider = ({ children }) => {
         if (!response.ok) throw new Error(data.detail || 'Verification failed');
         
         localStorage.setItem("token", data.access_token);
-        setUser({ authenticated: true });
+        await fetchProfile();
         return data;
     };
 
@@ -69,7 +90,7 @@ export const AuthProvider = ({ children }) => {
         if (!response.ok) throw new Error(data.detail || 'Google Login failed');
         
         localStorage.setItem("token", data.access_token);
-        setUser({ authenticated: true });
+        await fetchProfile();
         return data;
     };
 
@@ -95,13 +116,29 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
+    const updateProfile = async (updateData) => {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_URL}/me`, {
+            method: 'PATCH',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(updateData),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || 'Update failed');
+        setUser(data);
+        return data;
+    };
+
     const logout = () => {
         localStorage.removeItem("token");
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, signup, verifyOtp, googleLogin, forgotPassword, resetPassword, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, signup, verifyOtp, googleLogin, forgotPassword, resetPassword, updateProfile, logout }}>
             {children}
         </AuthContext.Provider>
     );

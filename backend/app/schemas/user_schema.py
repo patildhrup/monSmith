@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, field_validator
 import re
 from typing import Optional
+from datetime import datetime
 
 class UserSignup(BaseModel):
     email: EmailStr
@@ -59,3 +60,14 @@ class ResetPassword(BaseModel):
         if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", v):
             raise ValueError('Password must contain at least one special character')
         return v
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+
+class UserResponse(BaseModel):
+    email: EmailStr
+    full_name: Optional[str] = None
+    picture: Optional[str] = None
+    auth_provider: str
+    is_verified: bool
+    created_at: datetime

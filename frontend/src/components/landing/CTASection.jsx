@@ -1,7 +1,10 @@
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/authContext';
 
 const CTASection = () => {
+    const { user } = useAuth();
+
     return (
         <section className="py-24 px-4 relative overflow-hidden">
             {/* Background gradients */}
@@ -20,10 +23,17 @@ const CTASection = () => {
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <Link to="/signup" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-md font-semibold text-lg flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(0,156,0,0.5)] hover:shadow-[0_0_25px_rgba(0,156,0,0.7)] group">
-                            Start Free Trial
-                            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                        </Link>
+                        {user ? (
+                            <Link to="/dashboard" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-md font-semibold text-lg flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(0,156,0,0.5)] hover:shadow-[0_0_25px_rgba(0,156,0,0.7)] group">
+                                Go to Dashboard
+                                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                            </Link>
+                        ) : (
+                            <Link to="/signup" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-md font-semibold text-lg flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(0,156,0,0.5)] hover:shadow-[0_0_25px_rgba(0,156,0,0.7)] group">
+                                Start Free Trial
+                                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                            </Link>
+                        )}
                         <button className="bg-background hover:bg-muted border border-border text-foreground px-8 py-4 rounded-md font-semibold text-lg transition-colors">
                             Talk to Sales
                         </button>

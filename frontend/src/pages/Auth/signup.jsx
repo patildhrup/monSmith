@@ -13,6 +13,14 @@ const Signup = () => {
     const { signup, verifyOtp } = useAuth();
     const navigate = useNavigate();
 
+    const passwordRequirements = [
+        { label: 'At least 8 characters', test: (p) => p.length >= 8 },
+        { label: 'At least one uppercase letter (A–Z)', test: (p) => /[A-Z]/.test(p) },
+        { label: 'At least one lowercase letter (a–z)', test: (p) => /[a-z]/.test(p) },
+        { label: 'At least one number (0–9)', test: (p) => /\d/.test(p) },
+        { label: 'At least one special character (!@#$%^&*)', test: (p) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+    ];
+
     const handleSignup = async (e) => {
         e.preventDefault();
         setError('');
@@ -21,7 +29,7 @@ const Signup = () => {
             await signup(formData.email, formData.password, formData.name);
             setStep(2);
         } catch (err) {
-            setError(err.message);
+            setError(err.message || 'Signup failed. Please check your details.');
         } finally {
             setLoading(false);
         }
@@ -116,6 +124,21 @@ const Signup = () => {
                                     value={formData.password}
                                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                                 />
+                            </div>
+                            
+                            {/* Password Requirements Checklist */}
+                            <div className="mt-3 p-3 bg-white/[0.02] border border-white/5 rounded-2xl space-y-2">
+                                {passwordRequirements.map((req, i) => {
+                                    const isMet = req.test(formData.password);
+                                    return (
+                                        <div key={i} className="flex items-center gap-2 transition-all duration-300">
+                                            <div className={`w-1.5 h-1.5 rounded-full ${isMet ? 'bg-primary shadow-[0_0_8px_rgba(0,156,0,0.6)]' : 'bg-slate-700'}`} />
+                                            <span className={`text-[11px] font-medium leading-none ${isMet ? 'text-primary' : 'text-slate-500'}`}>
+                                                {req.label}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
 

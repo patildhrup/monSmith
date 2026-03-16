@@ -2,8 +2,11 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from datetime import datetime, timedelta
 from ...db.db import db
 from ...models.user_model import UserModel, OTPModel
-from ...schemas.user_schema import UserSignup, UserLogin, VerifyOTP, Token, GoogleLogin, ForgotPasswordRequest, ResetPassword
-from ...core.auth_utils import get_password_hash, verify_password, create_access_token, generate_otp
+from ...schemas.user_schema import (
+    UserSignup, UserLogin, VerifyOTP, Token, GoogleLogin, 
+    ForgotPasswordRequest, ResetPassword, UserResponse, UserUpdate
+)
+from ...core.auth_utils import get_password_hash, verify_password, create_access_token, generate_otp, get_current_user
 from ...services.email_service import send_otp_email
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -178,3 +181,24 @@ async def google_login(data: GoogleLogin):
     except Exception as e:
         logger.error(f"General error during Google login: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Authentication error: {str(e)}")
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_me(current_user: dict = Depends(get_current_user)):
+    return current_user
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_me(data: UserUpdate, current_user: dict = Depends(get_current_user)):
+    update_data = {k: v for k, v in data.dict().items() if v is not None}
+    
+    if not update_data:
+        return current_user
+        
+    await db.users.update_one(
+        {"email": current_user["email"]},
+        {"$set": update_data}
+    )
+    
+    updated_user = await db.users.find_one({"email": current_user["email"]})
+    return updated_user

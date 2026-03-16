@@ -5,6 +5,7 @@ import Signup from './pages/Auth/signup';
 import UrlMon from './pages/Dashboard/UrlMon';
 import Dashboard from './pages/Dashboard/Dashboard';
 import ForgotPassword from './pages/Auth/ForgotPassword';
+import Settings from './pages/Dashboard/Settings';
 import { AuthProvider, useAuth } from './context/authContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -33,6 +34,7 @@ function App() {
           <Route path="/forget-password" element={<Navigate to="/forgot-password" />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/url-mon" element={<ProtectedRoute><UrlMon /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         </Routes>
       </Router>
     </AuthProvider>
