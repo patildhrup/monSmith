@@ -13,14 +13,14 @@ const StatCard = ({ title, value, icon, trend, status }) => {
                     {icon}
                 </div>
                 {trend && (
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${trend.startsWith('+') ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${trend.startsWith('+') ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
                         {trend}
                     </span>
                 )}
             </div>
             <div>
-                <p className="text-sm font-semibold text-slate-500 mb-1">{title}</p>
-                <p className="text-3xl font-bold text-slate-900 tracking-tight group-hover:translate-x-1 transition-transform duration-300">{value}</p>
+                <p className="text-sm font-semibold text-muted-foreground mb-1">{title}</p>
+                <p className="text-3xl font-bold text-foreground tracking-tight group-hover:translate-x-1 transition-transform duration-300">{value}</p>
             </div>
         </div>
     );

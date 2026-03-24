@@ -5,8 +5,22 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "google-auth>=2.49.1",
-    "i>=2.1.0",
-    "pip>=26.0.1",
-    "sendgrid>=6.12.5",
+    "fastapi",
+    "uvicorn",
+    "pymongo",
+    "python-dotenv",
+    "passlib[bcrypt]",
+    "python-jose[cryptography]",
+    "authlib",
+    "google-auth",
+    "requests",
+    "motor",
+    "email-validator",
+    "sendgrid",
+    "langchain",
+    "langchain-groq",
+    "langchain-core",
+    "langchain-community",
+    "docker",
+    "redis",
 ]

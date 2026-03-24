@@ -13,8 +13,10 @@ const Sidebar = () => {
         { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
         { name: 'Scan URL', icon: <Globe size={20} />, path: '/url-mon' },
         { name: 'Scans', icon: <History size={20} />, path: '/scans' },
+        { name: 'Logs', icon: <FileText size={20} />, path: '/logs' }, // drop down menu ( add subfinder, assetfinder, dnsx, httpx, nuclei, subzy, ffuf, nmap tab for log)
         { name: 'Reports', icon: <FileText size={20} />, path: '/reports' },
         { name: 'Settings', icon: <Settings size={20} />, path: '/settings' },
+        
     ];
 
     return (

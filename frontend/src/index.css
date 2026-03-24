@@ -4,53 +4,51 @@
 
 @layer base {
   :root {
-    --background: 0 0% 99%;
-    /* #FCFCFC */
-    --foreground: 222 47% 11%;
-    /* Dark blue-ish black */
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --background: 0 0% 0%;
+    /* Pure Black */
+    --foreground: 0 0% 98%;
+    /* Off-white */
+    --card: 0 0% 4%;
+    /* Very dark grey for cards */
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
     --primary: 120 100% 31%;
     /* #009C00 */
-    --primary-foreground: 0 0% 99%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 120 20% 90%;
-    --accent-foreground: 120 100% 31%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 137 0% 99%;
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 120 100% 31%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
     --ring: 120 100% 31%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 0 0% 4%;
-    /* #0A0A0A */
-    --foreground: 137 0% 99%;
-    /* #FCFCFC */
-    --card: 0 0% 6%;
-    --card-foreground: 137 0% 99%;
-    --popover: 0 0% 6%;
-    --popover-foreground: 137 0% 99%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
     --primary: 120 100% 31%;
-    /* #009C00 */
-    --primary-foreground: 137 0% 99%;
+    --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 12%;
-    --secondary-foreground: 137 0% 99%;
+    --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 60%;
+    --muted-foreground: 0 0% 64%;
     --accent: 120 100% 31%;
-    --accent-foreground: 137 0% 99%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 137 0% 99%;
-    --border: 0 0% 16%;
-    --input: 0 0% 16%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
     --ring: 120 100% 31%;
   }
 
@@ -69,4 +67,14 @@
   html {
     @apply font-sans;
   }
+}
+
+@keyframes progress {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(-20%); }
+  100% { transform: translateX(0); }
+}
+
+.animate-progress {
+  animation: progress 5s ease-in-out infinite;
 }

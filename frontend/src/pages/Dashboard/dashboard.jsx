@@ -23,8 +23,8 @@ const Dashboard = () => {
     return (
         <DashboardLayout>
             <div className="mb-10">
-                <h1 className="text-4xl font-extrabold tracking-tight text-slate-950 mb-3">Overview</h1>
-                <p className="text-slate-500 text-lg">Monitor your infrastructure's health and security status in real-time.</p>
+                <h1 className="text-4xl font-extrabold tracking-tight text-foreground mb-3">Overview</h1>
+                <p className="text-muted-foreground text-lg">Monitor your infrastructure's health and security status in real-time.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
@@ -34,8 +34,8 @@ const Dashboard = () => {
             </div>
 
             <div className="bg-card rounded-[32px] border border-border/80 shadow-sm overflow-hidden">
-                <div className="px-8 py-7 border-b border-border/60 flex justify-between items-center bg-slate-50/30">
-                    <h2 className="text-xl font-bold text-slate-900">Recent Scans</h2>
+                <div className="px-8 py-7 border-b border-border/60 flex justify-between items-center bg-muted/10">
+                    <h2 className="text-xl font-bold text-foreground">Recent Scans</h2>
                     <button className="text-sm font-bold text-primary hover:underline flex items-center gap-1 group">
                         View All Scans
                         <ArrowUpRight size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -44,12 +44,12 @@ const Dashboard = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-50">
-                                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Target URL</th>
-                                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Vulnerabilities</th>
-                                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
-                                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
+                            <tr className="bg-muted/5">
+                                <th className="px-8 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Target URL</th>
+                                <th className="px-8 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Status</th>
+                                <th className="px-8 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Vulnerabilities</th>
+                                <th className="px-8 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Date</th>
+                                <th className="px-8 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
@@ -57,14 +57,14 @@ const Dashboard = () => {
                                 <tr key={index} className="hover:bg-muted/20 transition-colors group">
                                     <td className="px-8 py-5">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500">
+                                            <div className="w-8 h-8 bg-muted/20 rounded-lg flex items-center justify-center text-muted-foreground">
                                                 <ExternalLink size={14} />
                                             </div>
-                                            <span className="font-semibold text-slate-900 truncate max-w-[200px]">{scan.url}</span>
+                                            <span className="font-semibold text-foreground truncate max-w-[200px]">{scan.url}</span>
                                         </div>
                                     </td>
                                     <td className="px-8 py-5">
-                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${scan.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${scan.status === 'Completed' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
                                             }`}>
                                             {scan.status}
                                         </span>

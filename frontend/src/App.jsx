@@ -6,6 +6,9 @@ import UrlMon from './pages/Dashboard/UrlMon';
 import Dashboard from './pages/Dashboard/Dashboard';
 import ForgotPassword from './pages/Auth/ForgotPassword';
 import Settings from './pages/Dashboard/Settings';
+import Scans from './pages/Dashboard/Scans';
+import Logs from './pages/Dashboard/Logs';
+import Reports from './pages/Dashboard/Reports';
 import { AuthProvider, useAuth } from './context/authContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -34,6 +37,9 @@ function App() {
           <Route path="/forget-password" element={<Navigate to="/forgot-password" />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/url-mon" element={<ProtectedRoute><UrlMon /></ProtectedRoute>} />
+          <Route path="/scans" element={<ProtectedRoute><Scans /></ProtectedRoute>} />
+          <Route path="/logs" element={<ProtectedRoute><Logs /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         </Routes>
       </Router>

@@ -10,4 +10,7 @@ google-auth
 requests
 motor
 email-validator
-sendgrid
+sendgrid
+langchain
+langchain-groq
+boto3
