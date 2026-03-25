@@ -1,18 +1,57 @@
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks, Depends
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks, Depends, Security, Header
+from fastapi.security import APIKeyHeader
 from typing import List, Optional
 import uuid
+import os
 import asyncio
 import logging
 import json
+from datetime import datetime
 from app.scanner.scanner import scanner_service
 from app.core.auth_utils import get_current_user
-from app.db.redis import get_redis
 from app.db.db import db
 from pydantic import BaseModel
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-redis_client = get_redis()
+
+# Security: API Key for remote scanners
+SCANNER_API_KEY_NAME = "X-Scanner-API-Key"
+api_key_header = APIKeyHeader(name=SCANNER_API_KEY_NAME, auto_error=False)
+
+async def verify_scanner_key(api_key: str = Security(api_key_header)):
+    if not api_key or api_key != os.getenv("SCANNER_API_KEY"):
+        raise HTTPException(
+            status_code=403,
+            detail="Could not validate scanner API key"
+        )
+    return api_key
+
+# Models
+class ScanRequest(BaseModel):
+    target: str
+
+class ScanStatus(BaseModel):
+    job_id: str
+    target: str
+    status: str
+    current_stage: Optional[str] = None
+    message: Optional[str] = None
+    results: Optional[dict] = None
+
+class ResultsUpload(BaseModel):
+    results: dict
+    status: str = "completed"
+    current_stage: str = "completed"
+    message: str = "Scan completed remotely"
+
+class ProgressUpdate(BaseModel):
+    current_stage: str
+    message: str
+    stage_data: Optional[dict] = None
+
+# In-memory storage for active scans (replacing Redis)
+scan_jobs: dict[str, dict] = {}
 
 class ScanRequest(BaseModel):
     target: str
@@ -24,6 +63,11 @@ class ScanStatus(BaseModel):
     current_stage: Optional[str] = None
     message: Optional[str] = None
     results: Optional[dict] = None
+
+class ResultsUpload(BaseModel):
+    results: dict
+    status: str = "completed"
+    message: str = "Scan results uploaded"
 
 active_connections: dict[str, List[WebSocket]] = {}
 
@@ -37,18 +81,18 @@ async def broadcast_status(job_id: str, status_data: dict):
 
 async def run_scan_task(job_id: str, target: str, user_email: str):
     async def on_progress(data: dict):
-        # The scanner_service now updates Redis internally, 
-        # but we still want to broadcast to WebSockets
-        job_data = redis_client.get(f"scan_job:{job_id}")
+        job_data = scan_jobs.get(job_id)
         if job_data:
-            await broadcast_status(job_id, json.loads(job_data))
+            # Update local memory
+            job_data.update(data)
+            await broadcast_status(job_id, job_data)
 
     try:
         await scanner_service.run_scan(target, user_email, job_id, on_progress)
     except Exception as e:
         logger.error(f"Background scan task failed: {e}")
         error_data = {"status": "failed", "message": str(e)}
-        redis_client.set(f"scan_job:{job_id}", json.dumps(error_data), ex=3600)
+        scan_jobs[job_id].update(error_data)
         await broadcast_status(job_id, error_data)
 
 @router.post("/scan", response_model=ScanStatus)
@@ -63,15 +107,8 @@ async def start_scan(request: ScanRequest, background_tasks: BackgroundTasks, cu
         "results": None
     }
     
-    # Store in Redis
-    try:
-        redis_client.set(f"scan_job:{job_id}", json.dumps(job_info), ex=3600)
-    except Exception as e:
-        logger.error(f"Redis connection error: {e}")
-        raise HTTPException(
-            status_code=500, 
-            detail="Could not connect to Redis. Please ensure Redis is running and REDIS_HOST is configured properly."
-        )
+    # Store in memory
+    scan_jobs[job_id] = job_info
     
     background_tasks.add_task(run_scan_task, job_id, request.target, current_user["email"])
     
@@ -79,9 +116,9 @@ async def start_scan(request: ScanRequest, background_tasks: BackgroundTasks, cu
 
 @router.get("/status/{job_id}", response_model=ScanStatus)
 async def get_scan_status(job_id: str, current_user: dict = Depends(get_current_user)):
-    job_data = redis_client.get(f"scan_job:{job_id}")
+    job_data = scan_jobs.get(job_id)
     if not job_data:
-        # Check MongoDB if not in Redis
+        # Check MongoDB if not in memory
         scan = await db.scans.find_one({"job_id": job_id})
         if not scan:
             raise HTTPException(status_code=404, detail="Scan job not found")
@@ -93,7 +130,7 @@ async def get_scan_status(job_id: str, current_user: dict = Depends(get_current_
             "message": scan.get("message"),
             "results": scan.get("results")
         }
-    return json.loads(job_data)
+    return job_data
 
 @router.get("/history", response_model=List[ScanStatus])
 async def get_scan_history(current_user: dict = Depends(get_current_user)):
@@ -119,6 +156,102 @@ async def get_scan_details(job_id: str, current_user: dict = Depends(get_current
     scan["_id"] = str(scan["_id"])
     return scan
 
+@router.post("/results/{job_id}")
+async def upload_results(
+    job_id: str, 
+    data: ResultsUpload, 
+    api_key: str = Depends(verify_scanner_key)
+):
+    """
+    Endpoint for remote scanners (EC2) to post their findings securely.
+    """
+    logger.info(f"Authenticated remote results received for job {job_id}")
+    
+    # Get job info from memory if exists
+    job_info = scan_jobs.get(job_id)
+    user_email = job_info.get("user_email", "system") if job_info else "system"
+    target = job_info.get("target", "unknown") if job_info else data.results.get("target", "unknown")
+
+    # Finalize results and generate AI Report
+    results = data.results
+    if "ai_report" not in results and scanner_service.llm:
+        try:
+            results["ai_report"] = await scanner_service._generate_ai_report(results)
+        except Exception as e:
+            logger.error(f"AI report generation failed for remote upload: {e}")
+
+    scan_doc = {
+        "job_id": job_id,
+        "user_email": user_email,
+        "target": target,
+        "status": data.status,
+        "current_stage": data.current_stage,
+        "message": data.message,
+        "results": results,
+        "created_at": datetime.utcnow(),
+        "completed_at": datetime.utcnow()
+    }
+    
+    # Save to MongoDB
+    await db.scans.update_one(
+        {"job_id": job_id},
+        {"$set": scan_doc},
+        upsert=True
+    )
+    
+    # Update local memory and broadcast via WebSocket
+    if job_id in scan_jobs:
+        scan_jobs[job_id].update({
+            "status": data.status,
+            "results": results,
+            "current_stage": data.current_stage,
+            "message": data.message
+        })
+        await broadcast_status(job_id, scan_jobs[job_id])
+        # Clean up memory-based job if completed
+        if data.status in ["completed", "failed"]:
+            # We keep it for a short while or let browser pull it later
+            pass
+            
+    return {"status": "success", "message": "Final results stored"}
+
+@router.post("/results/{job_id}/progress")
+async def update_scan_progress(
+    job_id: str, 
+    data: ProgressUpdate, 
+    api_key: str = Depends(verify_scanner_key)
+):
+    """
+    Endpoint for remote scanners to report progress/stage updates.
+    """
+    logger.info(f"Progress update for {job_id}: {data.current_stage}")
+    
+    if job_id in scan_jobs:
+        scan_jobs[job_id].update({
+            "current_stage": data.current_stage,
+            "message": data.message
+        })
+        # If there's partial data (e.g. subdomains found so far), update it
+        if data.stage_data:
+            if not scan_jobs[job_id].get("results"):
+                scan_jobs[job_id]["results"] = {}
+            scan_jobs[job_id]["results"].update(data.stage_data)
+            
+        await broadcast_status(job_id, scan_jobs[job_id])
+    
+    # Optional: Update DB for persistence if we want long-term progress tracking
+    await db.scans.update_one(
+        {"job_id": job_id},
+        {"$set": {
+            "current_stage": data.current_stage,
+            "message": data.message,
+            "updated_at": datetime.utcnow()
+        }},
+        upsert=True
+    )
+    
+    return {"status": "success"}
+
 @router.websocket("/ws/{job_id}")
 async def websocket_endpoint(websocket: WebSocket, job_id: str):
     await websocket.accept()
@@ -129,9 +262,9 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
     active_connections[job_id].append(websocket)
     
     # Send current status immediately
-    job_data = redis_client.get(f"scan_job:{job_id}")
+    job_data = scan_jobs.get(job_id)
     if job_data:
-        await websocket.send_json(json.loads(job_data))
+        await websocket.send_json(job_data)
     
     try:
         while True:

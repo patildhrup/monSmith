@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
             return;
         }
-        
+
         try {
             const response = await fetch(`${API_URL}/me`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || 'Login failed');
-        
+
         localStorage.setItem("token", data.access_token);
         await fetchProfile();
         return data;
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || 'Verification failed');
-        
+
         localStorage.setItem("token", data.access_token);
         await fetchProfile();
         return data;
@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }) => {
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || 'Google Login failed');
-        
+
         localStorage.setItem("token", data.access_token);
         await fetchProfile();
         return data;
@@ -120,7 +120,7 @@ export const AuthProvider = ({ children }) => {
         const token = localStorage.getItem("token");
         const response = await fetch(`${API_URL}/me`, {
             method: 'PATCH',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },

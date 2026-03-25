@@ -14,3 +14,4 @@ sendgrid
 langchain
 langchain-groq
 boto3
+dnspython

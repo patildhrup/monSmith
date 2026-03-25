@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import gsap from 'gsap';
-import { 
-    Search, Globe, ShieldCheck, ArrowRight, Activity, Zap, 
-    CheckCircle2, Circle, AlertCircle, Loader2, Server, 
+import {
+    Search, Globe, ShieldCheck, ArrowRight, Activity, Zap,
+    CheckCircle2, Circle, AlertCircle, Loader2, Server,
     Network, ShieldAlert, Cpu, FileText, ChevronRight,
     Terminal, Lock, ExternalLink
 } from 'lucide-react';
@@ -83,7 +83,7 @@ const UrlMon = () => {
         setIsScanning(true);
         setError(null);
         setScanData(null);
-        
+
         try {
             const token = localStorage.getItem('token');
             const response = await fetch('http://localhost:8000/api/v1/scanner/scan', {
@@ -96,7 +96,7 @@ const UrlMon = () => {
             });
 
             if (!response.ok) throw new Error('Failed to start scan');
-            
+
             const data = await response.json();
             setCurrentJobId(data.job_id);
             setScanData(data);
@@ -109,16 +109,16 @@ const UrlMon = () => {
 
     const getStageStatus = (stageId) => {
         if (!scanData) return 'pending';
-        
+
         const stageIndex = STAGES.findIndex(s => s.id === stageId);
         const currentIndex = STAGES.findIndex(s => s.id === scanData.current_stage);
-        
+
         if (scanData.status === 'completed') return 'completed';
         if (scanData.status === 'failed' && stageId === scanData.current_stage) return 'error';
-        
+
         if (stageId === scanData.current_stage) return 'active';
         if (stageIndex < currentIndex) return 'completed';
-        
+
         return 'pending';
     };
 
@@ -194,22 +194,20 @@ const UrlMon = () => {
                                 {STAGES.map((stage, index) => {
                                     const status = getStageStatus(stage.id);
                                     return (
-                                        <div 
+                                        <div
                                             key={stage.id}
-                                            className={`relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${
-                                                status === 'active' 
-                                                ? 'bg-primary/5 border-primary/30 shadow-lg shadow-primary/5' 
-                                                : status === 'completed' 
-                                                ? 'bg-secondary/5 border-white/5 opacity-80'
-                                                : 'bg-transparent border-white/5 opacity-40'
-                                            }`}
+                                            className={`relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${status === 'active'
+                                                    ? 'bg-primary/5 border-primary/30 shadow-lg shadow-primary/5'
+                                                    : status === 'completed'
+                                                        ? 'bg-secondary/5 border-white/5 opacity-80'
+                                                        : 'bg-transparent border-white/5 opacity-40'
+                                                }`}
                                         >
-                                            <div className={`p-2 rounded-xl border ${
-                                                status === 'active' ? 'bg-primary text-primary-foreground border-primary shadow-glow' :
-                                                status === 'completed' ? 'bg-primary/20 text-primary border-primary/20' :
-                                                status === 'error' ? 'bg-destructive/20 text-destructive border-destructive/20' :
-                                                'bg-white/5 text-muted-foreground border-white/5'
-                                            }`}>
+                                            <div className={`p-2 rounded-xl border ${status === 'active' ? 'bg-primary text-primary-foreground border-primary shadow-glow' :
+                                                    status === 'completed' ? 'bg-primary/20 text-primary border-primary/20' :
+                                                        status === 'error' ? 'bg-destructive/20 text-destructive border-destructive/20' :
+                                                            'bg-white/5 text-muted-foreground border-white/5'
+                                                }`}>
                                                 <stage.icon size={20} />
                                             </div>
                                             <div className="flex-1">
@@ -268,10 +266,9 @@ const UrlMon = () => {
                                                 strokeDasharray={2 * Math.PI * 58}
                                                 strokeDashoffset={2 * Math.PI * 58 * (1 - scanData.results.ai_report.risk_score / 10)}
                                                 strokeLinecap="round"
-                                                className={`transition-all duration-1000 ${
-                                                    scanData.results.ai_report.risk_score > 7 ? 'text-destructive' : 
-                                                    scanData.results.ai_report.risk_score > 4 ? 'text-orange-400' : 'text-primary'
-                                                }`}
+                                                className={`transition-all duration-1000 ${scanData.results.ai_report.risk_score > 7 ? 'text-destructive' :
+                                                        scanData.results.ai_report.risk_score > 4 ? 'text-orange-400' : 'text-primary'
+                                                    }`}
                                             />
                                         </svg>
                                         <span className="absolute text-3xl font-bold">{scanData.results.ai_report.risk_score}</span>
@@ -295,7 +292,7 @@ const UrlMon = () => {
                                     <Zap size={24} />
                                     Detected Vulnerabilities
                                 </h3>
-                                
+
                                 {scanData.results.ai_report.vulnerabilities?.length > 0 ? (
                                     scanData.results.ai_report.vulnerabilities.map((vuln, idx) => (
                                         <div key={idx} className="group relative">
@@ -306,12 +303,11 @@ const UrlMon = () => {
                                                         <div className="space-y-1">
                                                             <div className="flex items-center gap-3">
                                                                 <h4 className="text-2xl font-bold text-foreground">{vuln.name}</h4>
-                                                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter ${
-                                                                    vuln.severity === 'Critical' ? 'bg-destructive/20 text-destructive' :
-                                                                    vuln.severity === 'High' ? 'bg-orange-500/20 text-orange-400' :
-                                                                    vuln.severity === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                                    'bg-primary/20 text-primary'
-                                                                }`}>
+                                                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter ${vuln.severity === 'Critical' ? 'bg-destructive/20 text-destructive' :
+                                                                        vuln.severity === 'High' ? 'bg-orange-500/20 text-orange-400' :
+                                                                            vuln.severity === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                                                'bg-primary/20 text-primary'
+                                                                    }`}>
                                                                     {vuln.severity}
                                                                 </span>
                                                             </div>
@@ -366,7 +362,7 @@ const UrlMon = () => {
                                 )}
 
                                 <div className="text-center pt-10">
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             setScanData(null);
                                             setUrl('');

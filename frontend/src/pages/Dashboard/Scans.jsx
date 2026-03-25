@@ -50,7 +50,7 @@ const Scans = () => {
                         </h1>
                         <p className="text-muted-foreground mt-1 text-lg">Review and manage your security audits.</p>
                     </div>
-                    <Link 
+                    <Link
                         to="/url-mon"
                         className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/20"
                     >
@@ -78,7 +78,7 @@ const Scans = () => {
                 ) : (
                     <div className="grid grid-cols-1 gap-4">
                         {scans.map((scan) => (
-                            <div 
+                            <div
                                 key={scan.job_id}
                                 className="group relative bg-card/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all hover:bg-card/80 hover:border-primary/30"
                             >
@@ -98,10 +98,9 @@ const Scans = () => {
                                                     {scan.job_id.substring(0, 8)}...
                                                 </span>
                                                 <span className="flex items-center gap-1.5 capitalize">
-                                                    <div className={`w-2 h-2 rounded-full ${
-                                                        scan.status === 'completed' ? 'bg-primary' : 
-                                                        scan.status === 'failed' ? 'bg-destructive' : 'bg-orange-400 animate-pulse'
-                                                    }`} />
+                                                    <div className={`w-2 h-2 rounded-full ${scan.status === 'completed' ? 'bg-primary' :
+                                                            scan.status === 'failed' ? 'bg-destructive' : 'bg-orange-400 animate-pulse'
+                                                        }`} />
                                                     {scan.status.replace('_', ' ')}
                                                 </span>
                                             </div>
@@ -109,13 +108,13 @@ const Scans = () => {
                                     </div>
 
                                     <div className="flex items-center gap-3">
-                                        <Link 
+                                        <Link
                                             to={`/reports?job_id=${scan.job_id}`}
                                             className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold border border-white/5 transition-all"
                                         >
                                             View Report
                                         </Link>
-                                        <Link 
+                                        <Link
                                             to={`/logs?job_id=${scan.job_id}`}
                                             className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold border border-white/5 transition-all"
                                         >

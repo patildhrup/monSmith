@@ -132,7 +132,6 @@ const Login = () => {
                         onError={handleGoogleError}
                         theme="filled_black"
                         shape="pill"
-                        width="100%"
                     />
                 </div>
 

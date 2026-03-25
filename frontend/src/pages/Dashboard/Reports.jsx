@@ -24,7 +24,7 @@ const Reports = () => {
     const fetchDetails = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8000/api/v1/scanner/details/${jobId}`, {
+            const response = await fetch(`http://localhost:8001/api/v1/scanner/details/${jobId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
