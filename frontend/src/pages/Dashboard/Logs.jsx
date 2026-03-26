@@ -7,7 +7,7 @@ const Logs = () => {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const jobId = queryParams.get('job_id');
-    
+
     const [scanDetails, setScanDetails] = useState(null);
     const [loading, setLoading] = useState(!!jobId);
     const [error, setError] = useState(null);
@@ -28,7 +28,7 @@ const Logs = () => {
     const fetchDetails = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8001/api/v1/scanner/details/${jobId}`, {
+            const response = await fetch(`http://localhost:8000/api/v1/scanner/details/${jobId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -108,7 +108,7 @@ const Logs = () => {
                                         </div>
                                         <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">monsmith-scanner.log</span>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => navigator.clipboard.writeText(scanDetails.raw_output)}
                                         className="text-muted-foreground hover:text-primary transition-colors p-1.5 hover:bg-white/5 rounded-lg"
                                         title="Copy to clipboard"
@@ -116,7 +116,7 @@ const Logs = () => {
                                         <Copy size={16} />
                                     </button>
                                 </div>
-                                <div 
+                                <div
                                     ref={scrollRef}
                                     className="p-8 h-[600px] overflow-y-auto font-mono text-sm leading-relaxed scrollbar-thin scrollbar-thumb-white/10"
                                 >
@@ -125,11 +125,10 @@ const Logs = () => {
                                             {scanDetails.raw_output.split('\n').map((line, i) => (
                                                 <div key={i} className="flex gap-4 group/line">
                                                     <span className="text-muted-foreground/30 select-none w-8 text-right inline-block">{i + 1}</span>
-                                                    <span className={`${
-                                                        line.includes('ERROR') ? 'text-destructive' : 
-                                                        line.includes('---') ? 'text-primary font-bold mt-4' : 
-                                                        line.includes('INFO') ? 'text-blue-400' : ''
-                                                    }`}>
+                                                    <span className={`${line.includes('ERROR') ? 'text-destructive' :
+                                                            line.includes('---') ? 'text-primary font-bold mt-4' :
+                                                                line.includes('INFO') ? 'text-blue-400' : ''
+                                                        }`}>
                                                         {line}
                                                     </span>
                                                 </div>

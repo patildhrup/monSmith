@@ -14,24 +14,32 @@ export const AuthProvider = ({ children }) => {
         const token = localStorage.getItem("token");
         if (!token) {
             setLoading(false);
+            setUser(null);
             return;
         }
 
         try {
             const response = await fetch(`${API_URL}/me`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
             });
-            const data = await response.json();
+            
             if (response.ok) {
+                const data = await response.json();
                 setUser(data);
+            } else if (response.status === 401) {
+                // Only logout on definite 401
+                console.warn("Session expired or invalid token (401)");
+                logout();
             } else {
-                localStorage.removeItem("token");
-                setUser(null);
+                const errorData = await response.json().catch(() => ({}));
+                console.error(`Profile fetch error (${response.status}):`, errorData);
             }
         } catch (err) {
-            console.error("Failed to fetch profile:", err);
-            localStorage.removeItem("token");
-            setUser(null);
+            console.error("Network error fetching profile:", err);
+            // Don't logout on network error, just stop loading
         } finally {
             setLoading(false);
         }

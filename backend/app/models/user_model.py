@@ -15,8 +15,8 @@ class UserModel(BaseModel):
     email: EmailStr
     hashed_password: Optional[str] = None
     full_name: Optional[str] = None
-    is_verifyed: bool = Field(default=False, alias="is_verified") # Fix alias if needed
     is_verified: bool = False
+    picture: Optional[str] = None
     auth_provider: str = "email" # email or google
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

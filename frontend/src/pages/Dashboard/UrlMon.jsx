@@ -193,40 +193,86 @@ const UrlMon = () => {
                             <div className="space-y-4">
                                 {STAGES.map((stage, index) => {
                                     const status = getStageStatus(stage.id);
+                                    const hasResults = scanData?.results?.[stage.id === 'live_domains' ? 'live_domains' : stage.id === 'vulnerabilities' ? 'vulnerabilities' : stage.id === 'init' ? 'message' : stage.id];
+                                    
+                                    // Special mapping for results since some keys might differ slightly or be nested
+                                    const getResultData = () => {
+                                        if (!scanData?.results) return null;
+                                        if (stage.id === 'subdomains') return scanData.results.subdomains;
+                                        if (stage.id === 'live_domains') return scanData.results.live_domains;
+                                        if (stage.id === 'endpoints') return scanData.results.endpoints;
+                                        if (stage.id === 'ports') return scanData.results.ports;
+                                        if (stage.id === 'vulnerabilities') return scanData.results.vulnerabilities;
+                                        return null;
+                                    };
+
+                                    const resultData = getResultData();
+
                                     return (
-                                        <div
-                                            key={stage.id}
-                                            className={`relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${status === 'active'
-                                                    ? 'bg-primary/5 border-primary/30 shadow-lg shadow-primary/5'
-                                                    : status === 'completed'
-                                                        ? 'bg-secondary/5 border-white/5 opacity-80'
-                                                        : 'bg-transparent border-white/5 opacity-40'
-                                                }`}
-                                        >
-                                            <div className={`p-2 rounded-xl border ${status === 'active' ? 'bg-primary text-primary-foreground border-primary shadow-glow' :
-                                                    status === 'completed' ? 'bg-primary/20 text-primary border-primary/20' :
-                                                        status === 'error' ? 'bg-destructive/20 text-destructive border-destructive/20' :
-                                                            'bg-white/5 text-muted-foreground border-white/5'
-                                                }`}>
-                                                <stage.icon size={20} />
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <span className={`font-semibold ${status === 'active' ? 'text-primary' : 'text-foreground'}`}>
-                                                        {stage.label}
-                                                    </span>
-                                                    {status === 'active' && <span className="text-xs text-primary animate-pulse font-mono">EXECUTING...</span>}
-                                                    {status === 'completed' && <CheckCircle2 size={16} className="text-primary" />}
+                                        <div key={stage.id} className="space-y-2">
+                                            <div
+                                                className={`relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${status === 'active'
+                                                        ? 'bg-primary/5 border-primary/30 shadow-lg shadow-primary/5'
+                                                        : status === 'completed'
+                                                            ? 'bg-secondary/5 border-white/5 opacity-100'
+                                                            : 'bg-transparent border-white/5 opacity-40'
+                                                    }`}
+                                            >
+                                                <div className={`p-2 rounded-xl border ${status === 'active' ? 'bg-primary text-primary-foreground border-primary shadow-glow' :
+                                                        status === 'completed' ? 'bg-primary/20 text-primary border-primary/20' :
+                                                            status === 'error' ? 'bg-destructive/20 text-destructive border-destructive/20' :
+                                                                'bg-white/5 text-muted-foreground border-white/5'
+                                                    }`}>
+                                                    <stage.icon size={20} />
                                                 </div>
-                                                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                                                    {status === 'active' && (
-                                                        <div className="h-full bg-primary animate-progress duration-[5000ms] ease-in-out" style={{ width: '60%' }}></div>
-                                                    )}
-                                                    {status === 'completed' && (
-                                                        <div className="h-full bg-primary" style={{ width: '100%' }}></div>
-                                                    )}
+                                                <div className="flex-1">
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <span className={`font-semibold ${status === 'active' ? 'text-primary' : 'text-foreground'}`}>
+                                                            {stage.label}
+                                                        </span>
+                                                        {status === 'active' && <span className="text-xs text-primary animate-pulse font-mono">EXECUTING...</span>}
+                                                        {status === 'completed' && <CheckCircle2 size={16} className="text-primary" />}
+                                                    </div>
+                                                    <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                                        {status === 'active' && (
+                                                            <div className="h-full bg-primary animate-progress duration-[5000ms] ease-in-out" style={{ width: '60%' }}></div>
+                                                        )}
+                                                        {status === 'completed' && (
+                                                            <div className="h-full bg-primary" style={{ width: '100%' }}></div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
+
+                                            {/* Result Box */}
+                                            {resultData && (status === 'active' || status === 'completed') && (
+                                                <div className="ml-14 anim-fade-up">
+                                                    <div className="bg-card/30 backdrop-blur-sm border border-white/5 rounded-xl p-4 overflow-hidden">
+                                                        <div className="flex items-center gap-2 mb-3 text-xs font-bold text-primary/70 uppercase tracking-widest">
+                                                            <Terminal size={12} />
+                                                            <span>{stage.label} Findings</span>
+                                                        </div>
+                                                        
+                                                        {Array.isArray(resultData) ? (
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {resultData.length > 0 ? (
+                                                                    resultData.map((item, i) => (
+                                                                        <span key={i} className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-sm font-mono text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors">
+                                                                            {item}
+                                                                        </span>
+                                                                    ))
+                                                                ) : (
+                                                                    <span className="text-sm text-muted-foreground/50 italic">No entries found yet...</span>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <pre className="text-sm font-mono text-muted-foreground bg-black/20 p-3 rounded-lg overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto custom-scrollbar">
+                                                                {resultData}
+                                                            </pre>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

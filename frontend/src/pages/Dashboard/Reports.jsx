@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { 
-    ShieldCheck, AlertCircle, Loader2, FileText, 
+import {
+    ShieldCheck, AlertCircle, Loader2, FileText,
     Globe, Zap, Terminal, Lock, ChevronLeft, ArrowRight
 } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
@@ -10,7 +10,7 @@ const Reports = () => {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const jobId = queryParams.get('job_id');
-    
+
     const [scanDetails, setScanDetails] = useState(null);
     const [loading, setLoading] = useState(!!jobId);
     const [error, setError] = useState(null);
@@ -24,7 +24,7 @@ const Reports = () => {
     const fetchDetails = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8001/api/v1/scanner/details/${jobId}`, {
+            const response = await fetch(`http://localhost:8000/api/v1/scanner/details/${jobId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -145,10 +145,9 @@ const Reports = () => {
                                         strokeDasharray={2 * Math.PI * 58}
                                         strokeDashoffset={2 * Math.PI * 58 * (1 - report.risk_score / 10)}
                                         strokeLinecap="round"
-                                        className={`transition-all duration-1000 ${
-                                            report.risk_score > 7 ? 'text-destructive' : 
-                                            report.risk_score > 4 ? 'text-orange-400' : 'text-primary'
-                                        }`}
+                                        className={`transition-all duration-1000 ${report.risk_score > 7 ? 'text-destructive' :
+                                                report.risk_score > 4 ? 'text-orange-400' : 'text-primary'
+                                            }`}
                                     />
                                 </svg>
                                 <span className="absolute text-3xl font-bold">{report.risk_score}</span>
@@ -172,7 +171,7 @@ const Reports = () => {
                             <Zap size={24} />
                             Detected Vulnerabilities
                         </h3>
-                        
+
                         {report.vulnerabilities?.length > 0 ? (
                             report.vulnerabilities.map((vuln, idx) => (
                                 <div key={idx} className="group relative">
@@ -183,12 +182,11 @@ const Reports = () => {
                                                 <div className="space-y-1">
                                                     <div className="flex items-center gap-3">
                                                         <h4 className="text-2xl font-bold text-foreground">{vuln.name}</h4>
-                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter ${
-                                                            vuln.severity === 'Critical' ? 'bg-destructive/20 text-destructive' :
-                                                            vuln.severity === 'High' ? 'bg-orange-500/20 text-orange-400' :
-                                                            vuln.severity === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                            'bg-primary/20 text-primary'
-                                                        }`}>
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter ${vuln.severity === 'Critical' ? 'bg-destructive/20 text-destructive' :
+                                                                vuln.severity === 'High' ? 'bg-orange-500/20 text-orange-400' :
+                                                                    vuln.severity === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                                        'bg-primary/20 text-primary'
+                                                            }`}>
                                                             {vuln.severity}
                                                         </span>
                                                     </div>

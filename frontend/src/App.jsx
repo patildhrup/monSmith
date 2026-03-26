@@ -10,6 +10,8 @@ import Scans from './pages/Dashboard/Scans';
 import Logs from './pages/Dashboard/Logs';
 import Reports from './pages/Dashboard/Reports';
 import { AuthProvider, useAuth } from './context/authContext';
+import GitConnect from './pages/Dashboard/gitConnect';
+import ApiEndpoints from './pages/Dashboard/apiEndpoints';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -41,6 +43,8 @@ function App() {
           <Route path="/logs" element={<ProtectedRoute><Logs /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/git-connect" element={<ProtectedRoute><GitConnect /></ProtectedRoute>} />
+          <Route path="/api-endpoints" element={<ProtectedRoute><ApiEndpoints /></ProtectedRoute>} />
         </Routes>
       </Router>
     </AuthProvider>
