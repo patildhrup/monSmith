@@ -16,3 +16,4 @@ langchain-groq
 boto3
 bandit
 beautifulsoup4
+zaproxy

@@ -7,7 +7,10 @@ import asyncio
 import logging
 import json
 from datetime import datetime
-from app.scanner.scanner import scanner_service
+from app.scanner.vulnerability_scan.vul_scan import perform_vulnerability_scan, perform_dast_scan
+from app.scanner.vulnerability_scan.zombie_scan import ZombieScanner
+from app.scanner.vulnerability_scan.report_engine import SecurityReportEngine
+from app.scanner.scanner import scanner_service # Keep for LLM if needed
 from app.core.auth_utils import get_current_user
 from app.db.db import db
 from pydantic import BaseModel
@@ -86,16 +89,62 @@ async def run_scan_task(job_id: str, target: str, user_email: str):
     async def on_progress(data: dict):
         job_data = scan_jobs.get(job_id)
         if job_data:
-            # Update local memory
             job_data.update(data)
             await broadcast_status(job_id, job_data)
 
     try:
-        await scanner_service.run_scan(target, user_email, job_id, on_progress)
+        # 1. Init
+        await on_progress({"current_stage": "init", "message": f"Initializing scan for {target}..."})
+        await asyncio.sleep(1) # Small delay for UI
+        
+        # 2. Subdomains (Visual only for now if not implemented)
+        await on_progress({"current_stage": "subdomains", "message": "Enumerating subdomains and services..."})
+        await asyncio.sleep(1)
+
+        # 3. DAST Scan (Vulnerabilities)
+        await on_progress({"current_stage": "vulnerabilities", "message": f"Performing DAST scan on {target}..."})
+        dast_vulns = await perform_dast_scan(target)
+        
+        # 4. Zombie Scan (Endpoints)
+        await on_progress({"current_stage": "endpoints", "message": "Detecting zombie APIs from discovered endpoints..."})
+        zs = ZombieScanner(llm=scanner_service.llm)
+        zombies = await zs.perform_zombie_scan(".", target_url=target)
+        
+        # 5. Report (Finalizing)
+        await on_progress({"current_stage": "report", "message": "Generating unified security report..."})
+        
+        engine = SecurityReportEngine()
+        final_report = engine.generate_unified_report(dast_vulns, zombies)
+        
+        # Store results
+        scan_doc = {
+            "job_id": job_id,
+            "user_email": user_email,
+            "target": target,
+            "status": "completed",
+            "current_stage": "completed",
+            "message": "DAST Scan completed!",
+            "results": final_report,
+            "created_at": datetime.utcnow(),
+            "completed_at": datetime.utcnow()
+        }
+        
+        await db.scans.insert_one(scan_doc)
+        
+        if job_id in scan_jobs:
+            scan_jobs[job_id].update({
+                "status": "completed",
+                "current_stage": "completed",
+                "message": "Scan completed!",
+                "results": final_report
+            })
+            await broadcast_status(job_id, scan_jobs[job_id])
+
     except Exception as e:
         logger.error(f"Background scan task failed: {e}")
         error_data = {"status": "failed", "message": str(e)}
-        scan_jobs[job_id].update(error_data)
+        if job_id in scan_jobs:
+            scan_jobs[job_id].update(error_data)
         await broadcast_status(job_id, error_data)
 
 @router.post("/scan", response_model=ScanStatus)
@@ -125,7 +174,62 @@ async def run_repo_scan_task(job_id: str, repo_url: str, user_email: str, token:
             await broadcast_status(job_id, job_data)
 
     try:
-        await scanner_service.run_repo_scan(repo_url, user_email, job_id, token, on_progress)
+        # 1. Init (Cloning)
+        await on_progress({"current_stage": "init", "message": f"Cloning repository {repo_url}..."})
+        
+        # Use token for private repos if available
+        auth_url = repo_url
+        if token:
+            if "github.com" in repo_url:
+                auth_url = repo_url.replace("https://", f"https://x-access-token:{token}@")
+
+        temp_dir = f"./temp_scan_{job_id}"
+        import subprocess
+        clone_res = subprocess.run(["git", "clone", "--depth", "1", auth_url, temp_dir], capture_output=True, text=True)
+        
+        if clone_res.returncode != 0:
+            raise Exception(f"Failed to clone repository: {clone_res.stderr}")
+
+        # 2. Vulnerabilities (SAST)
+        await on_progress({"current_stage": "vulnerabilities", "message": "Running static analysis (SAST) on code..."})
+        vulns = await perform_vulnerability_scan(temp_dir)
+        
+        # 3. Endpoints (Zombie Scan)
+        await on_progress({"current_stage": "endpoints", "message": "Detecting zombie APIs in code base..."})
+        zs = ZombieScanner(llm=scanner_service.llm)
+        zombies = await zs.perform_zombie_scan(temp_dir, target_url=repo_url)
+        
+        # 4. Report (Finalizing)
+        await on_progress({"current_stage": "report", "message": "Generating unified security report..."})
+        engine = SecurityReportEngine()
+        final_report = engine.generate_unified_report(vulns, zombies)
+        
+        # Clean up
+        import shutil
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+        scan_doc = {
+            "job_id": job_id,
+            "user_email": user_email,
+            "target": repo_url,
+            "status": "completed",
+            "current_stage": "completed",
+            "message": "SAST Scan completed!",
+            "results": final_report,
+            "created_at": datetime.utcnow(),
+            "completed_at": datetime.utcnow()
+        }
+        await db.scans.insert_one(scan_doc)
+        
+        if job_id in scan_jobs:
+            scan_jobs[job_id].update({
+                "status": "completed",
+                "current_stage": "completed",
+                "message": "Scan completed!",
+                "results": final_report
+            })
+            await broadcast_status(job_id, scan_jobs[job_id])
+
     except Exception as e:
         logger.error(f"Background repo scan task failed: {e}")
         error_data = {"status": "failed", "message": str(e)}
