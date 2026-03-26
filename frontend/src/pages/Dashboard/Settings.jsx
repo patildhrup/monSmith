@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/authContext';
 import DashboardLayout from '../../components/DashboardLayout';
-import { User, Mail, Shield, Save, X, Edit2, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, Mail, Shield, Save, X, Edit2, CheckCircle, AlertCircle, Github, Trash2, Unlink } from 'lucide-react';
 
 const Settings = () => {
-    const { user, updateProfile } = useAuth();
+    const { user, updateProfile, fetchProfile } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [fullName, setFullName] = useState(user?.full_name || '');
     const [loading, setLoading] = useState(false);
+    const [disconnectLoading, setDisconnectLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
@@ -20,7 +21,7 @@ const Settings = () => {
         e.preventDefault();
         setLoading(true);
         setMessage({ type: '', text: '' });
-        
+
         try {
             await updateProfile({ full_name: fullName });
             setMessage({ type: 'success', text: 'Profile updated successfully!' });
@@ -29,6 +30,33 @@ const Settings = () => {
             setMessage({ type: 'error', text: err.message || 'Failed to update profile' });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDisconnectGithub = async () => {
+        if (!window.confirm('Are you sure you want to disconnect your GitHub account? This will disable GitHub-related features.')) {
+            return;
+        }
+
+        setDisconnectLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:8000/api/v1/github/disconnect', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to disconnect GitHub');
+
+            setMessage({ type: 'success', text: 'GitHub disconnected successfully!' });
+            // Refresh profile to update UI
+            await fetchProfile();
+        } catch (err) {
+            setMessage({ type: 'error', text: err.message || 'Failed to disconnect GitHub' });
+        } finally {
+            setDisconnectLoading(false);
         }
     };
 
@@ -48,7 +76,7 @@ const Settings = () => {
                         <div className="bg-card/40 backdrop-blur-xl border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative">
                             {/* Decorative gradient */}
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-                            
+
                             <div className="p-8">
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="flex items-center gap-6">
@@ -67,7 +95,7 @@ const Settings = () => {
                                         </div>
                                     </div>
                                     {!isEditing && (
-                                        <button 
+                                        <button
                                             onClick={() => setIsEditing(true)}
                                             className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-xl transition-all font-medium border border-white/5 active:scale-95"
                                         >
@@ -77,11 +105,10 @@ const Settings = () => {
                                 </div>
 
                                 {message.text && (
-                                    <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 border ${
-                                        message.type === 'success' 
-                                        ? 'bg-primary/10 border-primary/20 text-primary' 
-                                        : 'bg-red-500/10 border-red-500/20 text-red-500'
-                                    }`}>
+                                    <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 border ${message.type === 'success'
+                                            ? 'bg-primary/10 border-primary/20 text-primary'
+                                            : 'bg-red-500/10 border-red-500/20 text-red-500'
+                                        }`}>
                                         {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
                                         <p className="text-sm font-medium">{message.text}</p>
                                     </div>
@@ -171,12 +198,57 @@ const Settings = () => {
                             </div>
                         </div>
 
-                        <div className="p-6 bg-primary/5 border border-primary/10 rounded-3xl">
-                            <h4 className="font-bold text-foreground mb-2 italic">Pro Tip</h4>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                                Complete your profile to get a personalized experience across the monSmith dashboard.
-                            </p>
+                        {/* Integrations Card */}
+                        <div className="bg-card/40 backdrop-blur-xl border border-white/5 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+                            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                                <Github size={18} className="text-primary" /> Integrations
+                            </h3>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-muted/30 rounded-2xl border border-white/5">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-black rounded-lg border border-white/10">
+                                                <Github size={20} />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold">GitHub</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {user.has_github_connected ? 'Connected' : 'Not connected'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {user.has_github_connected && (
+                                            <CheckCircle size={16} className="text-primary" />
+                                        )}
+                                    </div>
+
+                                    {user.has_github_connected ? (
+                                        <button
+                                            onClick={handleDisconnectGithub}
+                                            disabled={disconnectLoading}
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-xl transition-all text-sm font-bold border border-destructive/20 disabled:opacity-50"
+                                        >
+                                            {disconnectLoading ? (
+                                                <div className="w-4 h-4 border-2 border-destructive border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <Unlink size={16} />
+                                            )}
+                                            Disconnect GitHub
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => window.location.href = '/git-connect'}
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl transition-all text-sm font-bold border border-primary/20"
+                                        >
+                                            <Github size={16} /> Connect GitHub
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
                         </div>
+
+
                     </div>
                 </div>
             </div>

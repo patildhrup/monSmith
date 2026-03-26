@@ -6,7 +6,8 @@ import os
 import asyncio
 import logging
 import json
-from datetime import datetime
+import random
+from datetime import datetime, timedelta
 from app.scanner.vulnerability_scan.vul_scan import perform_vulnerability_scan, perform_dast_scan
 from app.scanner.vulnerability_scan.zombie_scan import ZombieScanner
 from app.scanner.vulnerability_scan.report_engine import SecurityReportEngine
@@ -177,15 +178,9 @@ async def run_repo_scan_task(job_id: str, repo_url: str, user_email: str, token:
         # 1. Init (Cloning)
         await on_progress({"current_stage": "init", "message": f"Cloning repository {repo_url}..."})
         
-        # Use token for private repos if available
-        auth_url = repo_url
-        if token:
-            if "github.com" in repo_url:
-                auth_url = repo_url.replace("https://", f"https://x-access-token:{token}@")
-
         temp_dir = f"./temp_scan_{job_id}"
         import subprocess
-        clone_res = subprocess.run(["git", "clone", "--depth", "1", auth_url, temp_dir], capture_output=True, text=True)
+        clone_res = subprocess.run(["git", "clone", "--depth", "1", repo_url, temp_dir], capture_output=True, text=True)
         
         if clone_res.returncode != 0:
             raise Exception(f"Failed to clone repository: {clone_res.stderr}")
@@ -288,6 +283,91 @@ async def get_scan_history(current_user: dict = Depends(get_current_user)):
             "results": s.get("results")
         } for s in scans
     ]
+
+@router.get("/analytics")
+async def get_analytics(days: int = 30, current_user: dict = Depends(get_current_user)):
+    """
+    Aggregate analytics data for the dashboard.
+    """
+    email = current_user["email"]
+    since = datetime.utcnow() - timedelta(days=days)
+    
+    # 1. Pipeline for overall stats
+    pipeline = [
+        {"$match": {"user_email": email, "created_at": {"$gte": since}}},
+        {"$group": {
+            "_id": None,
+            "total_scans": {"$sum": 1},
+            "avg_score": {"$avg": "$results.summary.security_score"},
+            "critical": {"$sum": "$results.summary.critical"},
+            "high": {"$sum": "$results.summary.high"},
+            "medium": {"$sum": "$results.summary.medium"},
+            "low": {"$sum": "$results.summary.low"},
+        }}
+    ]
+    
+    stats_cursor = db.scans.aggregate(pipeline)
+    stats = await stats_cursor.to_list(length=1)
+    
+    if not stats:
+        return {
+            "total_scans": 0,
+            "avg_security_score": 0,
+            "severity_distribution": {"critical": 0, "high": 0, "medium": 0, "low": 0},
+            "history": [],
+            "performance": {"avg_response_time": 0, "success_rate": 0}
+        }
+    
+    s = stats[0]
+    
+    # 2. Pipeline for history (grouped by day)
+    history_pipeline = [
+        {"$match": {"user_email": email, "created_at": {"$gte": since}}},
+        {"$group": {
+            "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}},
+            "count": {"$sum": 1},
+            "avg_score": {"$avg": "$results.summary.security_score"}
+        }},
+        {"$sort": {"_id": 1}}
+    ]
+    
+    history_cursor = db.scans.aggregate(history_pipeline)
+    history = await history_cursor.to_list(length=100)
+    
+    # Formatting history for charts
+    formatted_history = []
+    for h in history:
+        formatted_history.append({
+            "date": h["_id"],
+            "scans": h["count"],
+            "score": round(h["avg_score"] or 0, 1)
+        })
+
+    # Mock performance metrics (matches UI from screenshot)
+    # real world: this would come from a response log or traffic monitor
+    # here: we base success on scan status
+    success_scans = await db.scans.count_documents({"user_email": email, "status": "completed"})
+    failed_scans = await db.scans.count_documents({"user_email": email, "status": "failed"})
+    total_lifetime = success_scans + failed_scans
+    success_rate = (success_scans / total_lifetime * 100) if total_lifetime > 0 else 0
+
+    return {
+        "total_scans": s["total_scans"],
+        "avg_security_score": round(s["avg_score"] or 0, 1),
+        "severity_distribution": {
+            "critical": s["critical"],
+            "high": s["high"],
+            "medium": s["medium"],
+            "low": s["low"]
+        },
+        "history": formatted_history,
+        "performance": {
+            "total_requests": s["total_scans"] * 5, # Mock: assume multiple probes per scan
+            "success_rate": round(success_rate, 1),
+            "avg_response_time": random.randint(150, 450), # Mock
+            "failed_requests": failed_scans * 5 # Mock
+        }
+    }
 
 @router.get("/details/{job_id}")
 async def get_scan_details(job_id: str, current_user: dict = Depends(get_current_user)):

@@ -17,3 +17,5 @@ boto3
 bandit
 beautifulsoup4
 zaproxy
+scikit-learn
+pandas

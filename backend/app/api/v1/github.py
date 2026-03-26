@@ -105,3 +105,18 @@ async def get_github_repos(current_user: dict = Depends(get_current_user)):
     repos = response.json()
     logger.info(f"Fetched {len(repos)} repos for {current_user['email']}")
     return [{"name": r["full_name"], "url": r["clone_url"], "private": r["private"]} for r in repos]
+
+@router.post("/disconnect")
+async def disconnect_github(current_user: dict = Depends(get_current_user)):
+    """
+    Remove GitHub connection for the current user.
+    """
+    email = current_user["email"]
+    await db.users.update_one(
+        {"email": email},
+        {"$set": {
+            "github_token": None,
+            "has_github_connected": False
+        }}
+    )
+    return {"status": "success", "message": "GitHub disconnected"}
