@@ -1,7 +1,8 @@
 import logging
 from fastapi import FastAPI
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import auth, scanner
+from app.api.v1 import auth, scanner, github
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +28,12 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(scanner.router, prefix="/api/v1/scanner", tags=["scanner"])
+app.include_router(github.router, prefix="/api/v1/github", tags=["github"])
+
+# Direct callback for GitHub OAuth as requested
+@app.get("/auth/callback")
+async def github_root_callback(code: str, state: Optional[str] = None):
+    return await github.github_callback(code, state)
 
 @app.get("/")
 async def root():

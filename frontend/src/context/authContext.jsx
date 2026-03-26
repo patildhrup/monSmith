@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const API_URL = "http://localhost:8000/api/v1/auth";
+    const API_URL = `${import.meta.env.VITE_API_URL}/api/v1/auth`;
 
     const fetchProfile = async () => {
         const token = localStorage.getItem("token");
@@ -145,8 +145,10 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const token = localStorage.getItem("token");
+
     return (
-        <AuthContext.Provider value={{ user, loading, login, signup, verifyOtp, googleLogin, forgotPassword, resetPassword, updateProfile, logout }}>
+        <AuthContext.Provider value={{ user, token, loading, login, signup, verifyOtp, googleLogin, forgotPassword, resetPassword, updateProfile, logout, fetchProfile }}>
             {children}
         </AuthContext.Provider>
     );

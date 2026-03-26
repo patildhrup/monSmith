@@ -56,6 +56,9 @@ scan_jobs: dict[str, dict] = {}
 class ScanRequest(BaseModel):
     target: str
 
+class RepoScanRequest(BaseModel):
+    repo_url: str
+
 class ScanStatus(BaseModel):
     job_id: str
     target: str
@@ -111,6 +114,41 @@ async def start_scan(request: ScanRequest, background_tasks: BackgroundTasks, cu
     scan_jobs[job_id] = job_info
     
     background_tasks.add_task(run_scan_task, job_id, request.target, current_user["email"])
+    
+    return job_info
+
+async def run_repo_scan_task(job_id: str, repo_url: str, user_email: str, token: Optional[str] = None):
+    async def on_progress(data: dict):
+        job_data = scan_jobs.get(job_id)
+        if job_data:
+            job_data.update(data)
+            await broadcast_status(job_id, job_data)
+
+    try:
+        await scanner_service.run_repo_scan(repo_url, user_email, job_id, token, on_progress)
+    except Exception as e:
+        logger.error(f"Background repo scan task failed: {e}")
+        error_data = {"status": "failed", "message": str(e)}
+        if job_id in scan_jobs:
+            scan_jobs[job_id].update(error_data)
+        await broadcast_status(job_id, error_data)
+
+@router.post("/scan-repo", response_model=ScanStatus)
+async def start_repo_scan(request: RepoScanRequest, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+    job_id = str(uuid.uuid4())
+    job_info = {
+        "job_id": job_id,
+        "target": request.repo_url,
+        "status": "in_progress",
+        "current_stage": "init",
+        "message": "Initializing repository scan...",
+        "results": None
+    }
+    
+    scan_jobs[job_id] = job_info
+    
+    token = current_user.get("github_token")
+    background_tasks.add_task(run_repo_scan_task, job_id, request.repo_url, current_user["email"], token)
     
     return job_info
 

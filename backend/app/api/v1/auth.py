@@ -162,6 +162,8 @@ async def google_login(data: GoogleLogin):
                 "picture": picture,
                 "is_verified": True,
                 "auth_provider": "google",
+                "is_verified": True,
+                "has_github_connected": False,
                 "created_at": datetime.utcnow()
             }
             await db.users.insert_one(new_user)
@@ -185,6 +187,8 @@ async def google_login(data: GoogleLogin):
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: dict = Depends(get_current_user)):
+    # Explicitly calculate this for the response schema
+    current_user["has_github_connected"] = bool(current_user.get("github_token"))
     return current_user
 
 

@@ -18,6 +18,7 @@ class UserModel(BaseModel):
     is_verified: bool = False
     picture: Optional[str] = None
     auth_provider: str = "email" # email or google
+    github_token: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     model_config = ConfigDict(

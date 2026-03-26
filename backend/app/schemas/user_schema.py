@@ -70,4 +70,5 @@ class UserResponse(BaseModel):
     picture: Optional[str] = None
     auth_provider: str
     is_verified: bool
+    has_github_connected: Optional[bool] = False
     created_at: datetime
