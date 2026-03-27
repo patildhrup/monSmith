@@ -11,8 +11,10 @@ MONGO_URL = os.getenv("MONGO_URL")
 # client with shorter timeouts for better error reporting
 client = AsyncIOMotorClient(
     MONGO_URL,
-    serverSelectionTimeoutMS=5000,
-    connectTimeoutMS=5000,
+    serverSelectionTimeoutMS=10000,
+    connectTimeoutMS=10000,
+    socketTimeoutMS=30000,
+    maxPoolSize=20,
     tlsCAFile=certifi.where()
 )
 

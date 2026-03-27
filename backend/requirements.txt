@@ -19,3 +19,5 @@ beautifulsoup4
 zaproxy
 scikit-learn
 pandas
+docker
+gitpython

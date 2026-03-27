@@ -187,18 +187,43 @@ async def run_repo_scan_task(job_id: str, repo_url: str, user_email: str, token:
 
         # 2. Vulnerabilities (SAST)
         await on_progress({"current_stage": "vulnerabilities", "message": "Running static analysis (SAST) on code..."})
-        vulns = await perform_vulnerability_scan(temp_dir)
+        sast_vulns = await perform_vulnerability_scan(temp_dir)
         
-        # 3. Endpoints (Zombie Scan)
-        await on_progress({"current_stage": "endpoints", "message": "Detecting zombie APIs in code base..."})
+        # 3. Zombie + AI Security Scan
+        await on_progress({"current_stage": "endpoints", "message": "Detecting zombie APIs and running AI security analysis..."})
         zs = ZombieScanner(llm=scanner_service.llm)
-        zombies = await zs.perform_zombie_scan(temp_dir, target_url=repo_url)
+        zombie_result = await zs.perform_zombie_scan(temp_dir, target_url=repo_url)
+        # zombie_result = {zombie_apis, vulnerabilities, bugs, summary, all_endpoints}
+
+        # Merge AI-found vulnerabilities with SAST vulns
+        ai_vulns = zombie_result.get("vulnerabilities", [])
+        # Normalise AI vulns to the same schema as vul_scan findings
+        normalised_ai_vulns = []
+        for v in ai_vulns:
+            normalised_ai_vulns.append({
+                "title": v.get("issue", "AI-detected vulnerability"),
+                "severity": v.get("severity", "MEDIUM").upper(),
+                "tool": "AI-Zombie-Scanner",
+                "description": v.get("issue", ""),
+                "impact": "Detected by AI security analysis of codebase.",
+                "fix": v.get("fix", "Review and remediate the identified issue."),
+                "file": v.get("endpoint", "N/A"),
+                "line": 0,
+            })
         
-        # 4. Report (Finalizing)
+        all_vulns = sast_vulns + normalised_ai_vulns
+
+        # 4. Unified Report
         await on_progress({"current_stage": "report", "message": "Generating unified security report..."})
         engine = SecurityReportEngine()
-        final_report = engine.generate_unified_report(vulns, zombies)
+        final_report = engine.generate_unified_report(all_vulns, zombie_result.get("zombie_apis", []))
         
+        # Attach zombie-specific data for frontend
+        final_report["zombie_apis"]   = zombie_result.get("zombie_apis", [])
+        final_report["bugs"]          = zombie_result.get("bugs", [])
+        final_report["zombie_summary"] = zombie_result.get("summary", {})
+        final_report["all_endpoints"] = zombie_result.get("all_endpoints", [])
+
         # Clean up
         import shutil
         shutil.rmtree(temp_dir, ignore_errors=True)
@@ -207,9 +232,10 @@ async def run_repo_scan_task(job_id: str, repo_url: str, user_email: str, token:
             "job_id": job_id,
             "user_email": user_email,
             "target": repo_url,
+            "type": "repo",
             "status": "completed",
             "current_stage": "completed",
-            "message": "SAST Scan completed!",
+            "message": "SAST + Zombie Scan completed!",
             "results": final_report,
             "created_at": datetime.utcnow(),
             "completed_at": datetime.utcnow()

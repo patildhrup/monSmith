@@ -1,4 +1,5 @@
 import os
+import asyncio
 import random
 import string
 from datetime import datetime, timedelta
@@ -55,8 +56,25 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError as e:
         logger.warning(f"JWT decode error: {str(e)}")
         raise credentials_exception
-    
-    user = await db.users.find_one({"email": email})
+
+    # Retry once on transient MongoDB cancellation (can happen during heavy background tasks)
+    for attempt in range(2):
+        try:
+            user = await asyncio.wait_for(
+                db.users.find_one({"email": email}),
+                timeout=15.0
+            )
+            break
+        except (asyncio.TimeoutError, asyncio.CancelledError, Exception) as e:
+            if attempt == 0:
+                logger.warning(f"DB auth lookup attempt 1 failed ({type(e).__name__}), retrying...")
+                await asyncio.sleep(0.3)
+            else:
+                logger.error(f"DB auth lookup failed after retry: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Database temporarily unavailable. Please try again."
+                )
     if user is None:
         logger.warning(f"User not found for email: {email}")
         raise credentials_exception
