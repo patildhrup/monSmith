@@ -20,4 +20,3 @@ zaproxy
 scikit-learn
 pandas
 docker
-gitpython
