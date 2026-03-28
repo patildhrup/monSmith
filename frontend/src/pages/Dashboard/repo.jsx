@@ -272,7 +272,7 @@ export default function Repo() {
               {/* Graph Trigger */}
               <div style={{ marginBottom: 24, display: "flex", justifyContent: "flex-end" }}>
                 <button
-                  onClick={() => navigate(`/repo-graph/${results.job_id}`)}
+                  onClick={() => navigate(`/repo-graph/${results.job_id}`, { state: { repoName: selectedRepo?.name } })}
                   style={{
                     background: "rgba(99,102,241,.1)",
                     border: "1px solid rgba(99,102,241,.25)",
