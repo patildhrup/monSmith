@@ -438,6 +438,9 @@ async def get_scan_details(job_id: str, current_user: dict = Depends(get_current
     scan["top_risks"] = unified["top_risks"]
     scan["zombie_apis"] = unified["zombie_apis"]
     
+    # Flatten raw_output for Logs view
+    scan["raw_output"] = results.get("raw_output") or scan.get("raw_output") or ""
+    
     scan["_id"] = str(scan["_id"])
     return scan
 

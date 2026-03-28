@@ -1,6 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Terminal, Copy, Download, Search, AlertCircle, Loader2, ChevronRight, Hash } from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
+import {
+    Terminal, Copy, Download, Search, AlertCircle,
+    Loader2, ChevronLeft, Hash, ShieldCheck, Clock
+} from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
 
 const Logs = () => {
@@ -45,15 +48,30 @@ const Logs = () => {
 
     return (
         <DashboardLayout>
-            <div className="py-10">
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold flex items-center gap-3">
-                            <Terminal className="text-primary" />
-                            Raw Scan Logs
+            <div className="py-10 px-4 max-w-7xl mx-auto">
+                <div className="flex flex-wrap items-center justify-between gap-6 mb-10">
+                    <div className="space-y-2">
+                        <Link
+                            to="/scans"
+                            className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors mb-4 group"
+                        >
+                            <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                            Back to History
+                        </Link>
+                        <h1 className="text-4xl font-bold flex items-center gap-4 bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+                            <Terminal className="text-primary" size={36} />
+                            Raw Execution Trace
                         </h1>
-                        <p className="text-muted-foreground mt-1">Detailed tool outputs and execution trace.</p>
+                        <p className="text-muted-foreground text-lg max-w-2xl font-medium">
+                            Review step-by-step tool outputs and cryptographic proof of scan integrity.
+                        </p>
                     </div>
+                    {scanDetails && (
+                        <div className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl">
+                            <div className={`w-2 h-2 rounded-full ${scanDetails.status === 'completed' ? 'bg-primary' : 'bg-destructive'} animate-pulse`} />
+                            <span className="text-sm font-bold uppercase tracking-widest">{scanDetails.status}</span>
+                        </div>
+                    )}
                 </div>
 
                 {!jobId ? (
@@ -61,6 +79,10 @@ const Logs = () => {
                         <Search size={48} className="text-muted-foreground mx-auto mb-4 opacity-50" />
                         <h3 className="text-xl font-bold">Select a Scan</h3>
                         <p className="text-muted-foreground mt-2">Go to the Scans History page to select a scan and view its detailed logs.</p>
+                        <Link to="/scans" className="inline-flex items-center gap-2 mt-2 text-primary font-bold hover:underline">
+                            <ChevronLeft size={18} />
+                            Go to History
+                        </Link>
                     </div>
                 ) : loading ? (
                     <div className="flex flex-col items-center justify-center py-32 gap-4">
@@ -73,27 +95,24 @@ const Logs = () => {
                         <p className="font-semibold">{error}</p>
                     </div>
                 ) : (
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div className="bg-card/50 border border-white/10 p-4 rounded-xl">
-                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Target</p>
-                                <p className="font-mono text-sm truncate">{scanDetails.target}</p>
-                            </div>
-                            <div className="bg-card/50 border border-white/10 p-4 rounded-xl">
-                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Job ID</p>
-                                <p className="font-mono text-sm truncate">{scanDetails.job_id}</p>
-                            </div>
-                            <div className="bg-card/50 border border-white/10 p-4 rounded-xl">
-                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Status</p>
-                                <div className="flex items-center gap-2 text-sm font-bold capitalize">
-                                    <div className={`w-2 h-2 rounded-full ${scanDetails.status === 'completed' ? 'bg-primary' : 'bg-destructive'}`} />
-                                    {scanDetails.status}
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                            {[
+                                { label: 'Audit Target', value: scanDetails.target, icon: <Search size={16} /> },
+                                { label: 'Signature ID', value: (scanDetails.job_id || "").substring(0, 12) + "...", icon: <Hash size={16} /> },
+                                { label: 'Security Status', value: scanDetails.status, icon: <ShieldCheck size={16} /> },
+                                { label: 'Timestamp', value: new Date(scanDetails.created_at).toLocaleString(), icon: <Clock size={16} /> }
+                            ].map((stat, i) => (
+                                <div key={i} className="bg-card/40 backdrop-blur-xl border border-white/10 p-6 rounded-[32px] group hover:border-primary/30 transition-all">
+                                    <div className="flex items-center gap-3 mb-2 text-primary/70">
+                                        {stat.icon}
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{stat.label}</p>
+                                    </div>
+                                    <p className="font-mono text-sm font-bold truncate group-hover:text-primary transition-colors capitalize">
+                                        {stat.value}
+                                    </p>
                                 </div>
-                            </div>
-                            <div className="bg-card/50 border border-white/10 p-4 rounded-xl">
-                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Date</p>
-                                <p className="text-sm">{new Date(scanDetails.created_at).toLocaleString()}</p>
-                            </div>
+                            ))}
                         </div>
 
                         <div className="relative group">
@@ -109,7 +128,7 @@ const Logs = () => {
                                         <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">monsmith-scanner.log</span>
                                     </div>
                                     <button
-                                        onClick={() => navigator.clipboard.writeText(scanDetails.raw_output)}
+                                        onClick={() => navigator.clipboard.writeText(scanDetails.raw_output || "")}
                                         className="text-muted-foreground hover:text-primary transition-colors p-1.5 hover:bg-white/5 rounded-lg"
                                         title="Copy to clipboard"
                                     >
@@ -126,8 +145,8 @@ const Logs = () => {
                                                 <div key={i} className="flex gap-4 group/line">
                                                     <span className="text-muted-foreground/30 select-none w-8 text-right inline-block">{i + 1}</span>
                                                     <span className={`${line.includes('ERROR') ? 'text-destructive' :
-                                                            line.includes('---') ? 'text-primary font-bold mt-4' :
-                                                                line.includes('INFO') ? 'text-blue-400' : ''
+                                                        line.includes('---') ? 'text-primary font-bold mt-4' :
+                                                            line.includes('INFO') ? 'text-blue-400' : ''
                                                         }`}>
                                                         {line}
                                                     </span>
@@ -143,7 +162,7 @@ const Logs = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </>
                 )}
             </div>
         </DashboardLayout>
