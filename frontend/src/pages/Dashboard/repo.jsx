@@ -1,7 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Share2 } from "lucide-react";
+import { 
+  Share2, Github, GitBranch, Lock, ExternalLink, 
+  RefreshCw, Play, CheckCircle2, AlertCircle 
+} from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
+import { useAuth } from "../../context/authContext";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "../../components/ui/select";
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 const riskColor = (r = "") => {
@@ -34,10 +45,11 @@ const Badge = ({ label, color }) => (
   }}>{label}</span>
 );
 
-const API_BASE = "http://localhost:8000/api/v1";
+const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8000") + "/api/v1";
 
 // ── main component ────────────────────────────────────────────────────────────
 export default function Repo() {
+  const { user, token, fetchProfile } = useAuth();
   const navigate = useNavigate();
   const [repos, setRepos]           = useState([]);
   const [selectedRepo, setSelected] = useState(null);
@@ -47,12 +59,15 @@ export default function Repo() {
   const [error, setError]           = useState("");
   const [activeTab, setActiveTab]   = useState("zombie");
   const [connected, setConnected]   = useState(false);
+  const [fetchingRepos, setFetchingRepos] = useState(false);
   const wsRef = useRef(null);
 
   // ── fetch connected repos ────────────────────────────────────────────────
+  // ── fetch connected repos ────────────────────────────────────────────────
   const loadRepos = useCallback(async () => {
+    if (!token) return;
+    setFetchingRepos(true);
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(`${API_BASE}/github/repos`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -60,15 +75,32 @@ export default function Repo() {
         const data = await res.json();
         setRepos(data);
         setConnected(true);
-      } else if (res.status === 400) {
+      } else {
         setConnected(false);
       }
     } catch {
       setConnected(false);
+    } finally {
+      setFetchingRepos(false);
     }
-  }, []);
+  }, [token]);
 
-  useEffect(() => { loadRepos(); }, [loadRepos]);
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    const err = urlParams.get('error');
+
+    if (status === 'connected') {
+        fetchProfile();
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (err) {
+        setError(err.replace(/_/g, ' '));
+    }
+
+    if (user?.github_token || user?.has_github_connected || token) {
+        loadRepos();
+    }
+  }, [user, fetchProfile, token, loadRepos]);
 
   // ── start scan ───────────────────────────────────────────────────────────
   const startScan = async () => {
@@ -79,7 +111,6 @@ export default function Repo() {
     setStage("Initializing...");
 
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(`${API_BASE}/scanner/scan-repo`, {
         method: "POST",
         headers: {
@@ -124,11 +155,13 @@ export default function Repo() {
   };
 
   const connectGitHub = () => {
-    const email = localStorage.getItem("userEmail") || "";
-    const state = btoa(email);
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${
-      import.meta.env.VITE_GITHUB_CLIENT_ID
-    }&scope=repo,read:user,user:email&state=${state}`;
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
+    if (!clientId) {
+        alert('GitHub Client ID is not configured.');
+        return;
+    }
+    const state = btoa(user?.email || "");
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=repo,read:user&state=${state}&redirect_uri=http://localhost:8000/auth/callback`;
   };
 
   // ── derive counts ────────────────────────────────────────────────────────
@@ -166,19 +199,48 @@ export default function Repo() {
 
       {/* ── not connected ── */}
       {!connected && (
-        <div style={{ ...card, textAlign: "center", padding: "48px 32px" }}>
-          <div style={{ fontSize: 52, marginBottom: 16 }}>🔌</div>
-          <h2 style={{ margin: "0 0 8px", fontSize: 20 }}>Connect Your GitHub Account</h2>
-          <p style={{ color: "#94a3b8", marginBottom: 24, fontSize: 14 }}>
-            Authorize monSmith to access your repositories and start scanning.
-          </p>
-          <button onClick={connectGitHub} style={{
-            background: "linear-gradient(135deg,#a78bfa,#60a5fa)",
-            border: "none", borderRadius: 10, color: "#fff",
-            padding: "12px 32px", fontWeight: 700, fontSize: 15, cursor: "pointer",
-          }}>
-            Connect GitHub →
-          </button>
+        <div className="flex items-center justify-center py-12">
+            <div className="w-full max-w-xl bg-card/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
+                
+                <div className="relative z-10 flex flex-col items-center gap-6 text-center">
+                    <div className="w-16 h-16 bg-card border border-white/10 rounded-2xl flex items-center justify-center shadow-xl">
+                        <Github size={32} className="text-white" />
+                    </div>
+
+                    <div>
+                        <h2 className="text-2xl font-bold text-white tracking-tight">Connect GitHub</h2>
+                        <p className="text-slate-400 text-sm mt-2 leading-relaxed">
+                            Link your GitHub account to let monSmith scan your repositories for vulnerabilities.
+                        </p>
+                    </div>
+
+                    <ul className="w-full text-left space-y-3">
+                        {[
+                            { icon: GitBranch, text: 'Scan public & private repositories' },
+                            { icon: Lock, text: 'Secure OAuth access' },
+                            { icon: ExternalLink, text: 'Real-time vulnerability reports' },
+                        ].map(({ icon: Icon, text }) => (
+                            <li key={text} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/5">
+                                <Icon size={16} className="text-indigo-400 shrink-0" />
+                                <span className="text-sm text-slate-300">{text}</span>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <button
+                        onClick={connectGitHub}
+                        className="w-full flex items-center justify-center gap-3 bg-white text-gray-900 font-bold py-3.5 rounded-xl transition-all hover:bg-gray-100 active:scale-95 shadow-lg"
+                    >
+                        <Github size={20} />
+                        Connect with GitHub
+                    </button>
+                    
+                    <p className="text-[10px] text-slate-500">
+                        By connecting, you agree to our security scanning terms.
+                    </p>
+                </div>
+            </div>
         </div>
       )}
 
@@ -186,45 +248,65 @@ export default function Repo() {
       {connected && (
         <>
           {/* repo selector + scan trigger */}
-          <div style={{ ...card, marginBottom: 22, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ ...card, marginBottom: 22, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap", position: "relative" }}>
             <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 12, color: "#94a3b8", display: "block", marginBottom: 6 }}>SELECT REPOSITORY</label>
-              <select
+              <label style={{ fontSize: 12, color: "#94a3b8", display: "block", marginBottom: 6, marginLeft: 4 }}>SELECT REPOSITORY</label>
+              <Select
                 value={selectedRepo?.url || ""}
-                onChange={e => setSelected(repos.find(r => r.url === e.target.value) || null)}
-                style={{
-                  width: "100%", background: "rgba(255,255,255,.06)",
-                  border: "1px solid rgba(255,255,255,.12)", borderRadius: 8,
-                  color: "#e2e8f0", padding: "10px 14px", fontSize: 14,
-                  cursor: "pointer",
-                }}
+                onValueChange={(val) => setSelected(repos.find(r => r.url === val) || null)}
+                disabled={fetchingRepos || scanning}
               >
-                <option value="">— choose a repo —</option>
-                {repos.map(r => (
-                  <option key={r.url} value={r.url}>
-                    {r.name} {r.private ? "🔒" : ""}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full bg-white/5 border-white/10 text-white focus:ring-indigo-500/50 h-11 rounded-xl">
+                    <SelectValue placeholder="Choose a repository..." />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0f172a] border-white/10 text-white max-h-[300px]">
+                    {repos.map((repo) => (
+                        <SelectItem key={repo.url} value={repo.url} className="focus:bg-indigo-500/20 focus:text-white cursor-pointer py-2.5">
+                            <div className="flex flex-col text-left">
+                                <span className="font-bold text-sm">{repo.name.split('/').pop()}</span>
+                                <span className="text-[10px] text-slate-500 font-mono tracking-tight">{repo.name} {repo.private ? '🔒' : ''}</span>
+                            </div>
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <button
-              onClick={startScan}
-              disabled={!selectedRepo || scanning}
-              style={{
-                background: scanning
-                  ? "rgba(255,255,255,.07)"
-                  : "linear-gradient(135deg,#a78bfa,#60a5fa)",
-                border: "none", borderRadius: 10,
-                color: scanning ? "#64748b" : "#fff",
-                padding: "12px 28px", fontWeight: 700, fontSize: 14,
-                cursor: scanning ? "not-allowed" : "pointer",
-                whiteSpace: "nowrap", marginTop: 20,
-                transition: "all .2s",
-              }}
-            >
-              {scanning ? "⏳ Scanning…" : "🚀 Start Scan"}
-            </button>
+            <div className="flex gap-2" style={{ marginTop: 20 }}>
+                <button
+                    onClick={loadRepos}
+                    disabled={fetchingRepos || scanning}
+                    className="p-3 bg-white/5 hover:bg-white/10 text-slate-400 rounded-xl transition-all border border-white/5 disabled:opacity-50"
+                    title="Refresh Repositories"
+                >
+                    <RefreshCw size={18} className={fetchingRepos ? 'animate-spin' : ''} />
+                </button>
+
+                <button
+                    onClick={startScan}
+                    disabled={!selectedRepo || scanning}
+                    style={{
+                        background: scanning
+                        ? "rgba(255,255,255,.07)"
+                        : "linear-gradient(135deg,#a78bfa,#60a5fa)",
+                        border: "none", borderRadius: 10,
+                        color: scanning ? "#64748b" : "#fff",
+                        padding: "12px 28px", fontWeight: 700, fontSize: 14,
+                        cursor: scanning ? "not-allowed" : "pointer",
+                        whiteSpace: "nowrap",
+                        transition: "all .2s",
+                        boxShadow: scanning ? "none" : "0 10px 20px -5px rgba(99,102,241,0.3)"
+                    }}
+                >
+                    {scanning ? "⏳ Scanning…" : "🚀 Start Scan"}
+                </button>
+            </div>
+            
+            <div className="absolute -bottom-6 left-1 flex items-center gap-1.5 text-[10px] text-slate-500">
+                <CheckCircle2 size={10} className="text-indigo-400" />
+                GitHub connected &middot; 
+                <button onClick={connectGitHub} className="hover:text-indigo-400 underline decoration-indigo-400/30">Reconnect account</button>
+            </div>
           </div>
 
           {/* progress */}

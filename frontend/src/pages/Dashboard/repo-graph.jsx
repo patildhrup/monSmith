@@ -3,11 +3,12 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/authContext';
 import {
   Terminal, Shield, Zap, AlertTriangle, Search,
-  ChevronRight, Brain, Share2, Maximize2, RefreshCw,
+  ChevronRight, Sparkles, Share2, Maximize2, RefreshCw,
   MessageSquare, Settings, Filter, Download,
   ArrowLeft, Info, FileCode, Radio
 } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
+import RepoChat from '../../components/repoChat';
 import { gsap } from 'gsap';
 import ForceGraph2D from 'react-force-graph-2d';
 
@@ -204,16 +205,16 @@ export default function RepoGraph() {
                     cooldownTicks={100}
                     nodeCanvasObject={(node, ctx, globalScale) => {
                       const label = node.name;
-                      const fontSize = 12/globalScale;
+                      const fontSize = 12 / globalScale;
                       ctx.font = `${fontSize}px Inter`;
                       const textWidth = ctx.measureText(label).width;
-                      
+
                       const color = NODE_COLORS[node.label] || '#fff';
 
                       // Draw circle
                       ctx.fillStyle = color;
-                      ctx.beginPath(); 
-                      ctx.arc(node.x, node.y, 5, 0, 2 * Math.PI, false); 
+                      ctx.beginPath();
+                      ctx.arc(node.x, node.y, 5, 0, 2 * Math.PI, false);
                       ctx.fill();
 
                       // Glow effect for vulnerabilities
@@ -254,28 +255,7 @@ export default function RepoGraph() {
               </div>
 
               {/* Floating Chatbot - Bottom Center */}
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-xl px-6 z-20 pointer-events-none">
-                <div className="bg-slate-900/80 backdrop-blur-2xl border border-white/10 p-2 rounded-2xl shadow-2xl pointer-events-auto">
-                  <form onSubmit={handleAsk} className="relative flex items-center gap-2">
-                    <div className="p-2 bg-indigo-500/10 rounded-xl shrink-0">
-                      <Brain className="w-5 h-5 text-indigo-400" />
-                    </div>
-                    <input
-                      value={question}
-                      onChange={(e) => setQuestion(e.target.value)}
-                      placeholder="Ask AI about this architecture..."
-                      className="flex-1 bg-transparent border-none py-2 text-xs focus:ring-0 outline-none text-slate-200 placeholder:text-slate-500"
-                    />
-                    <button
-                      disabled={asking}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 disabled:opacity-50"
-                    >
-                      {asking ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-                      {asking ? "Thinking..." : "Analyze"}
-                    </button>
-                  </form>
-                </div>
-              </div>
+
             </div>
 
             {/* Analysis Tabs / Summary */}
@@ -345,8 +325,8 @@ export default function RepoGraph() {
                 {analysis?.explanation && (
                   <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl mb-6">
                     <div className="flex items-center gap-2 mb-2">
-                       <Brain className="w-3.5 h-3.5 text-indigo-400" />
-                       <span className="text-[10px] font-bold text-indigo-400 uppercase">AI Summary</span>
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                      <span className="text-[10px] font-bold text-indigo-400 uppercase">AI Summary</span>
                     </div>
                     <p className="text-[11px] leading-relaxed text-slate-400">{analysis.explanation}</p>
                   </div>
@@ -364,8 +344,8 @@ export default function RepoGraph() {
                       </div>
                       <div className="grid gap-2">
                         {nodes.slice(0, 50).map((node, i) => (
-                          <div 
-                            key={i} 
+                          <div
+                            key={i}
                             onClick={() => {
                               setActiveNode(node);
                               if (fgRef.current) {
@@ -377,8 +357,8 @@ export default function RepoGraph() {
                               ${activeNode?.id === node.id ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-slate-800/30 border-slate-700/30 hover:bg-slate-800/50'}`}
                           >
                             <div className="flex flex-col min-w-0">
-                               <span className="text-xs font-semibold text-slate-200 truncate">{node.name}</span>
-                               <span className="text-[10px] text-slate-500 font-mono truncate">{node.path || node.label}</span>
+                              <span className="text-xs font-semibold text-slate-200 truncate">{node.name}</span>
+                              <span className="text-[10px] text-slate-500 font-mono truncate">{node.path || node.label}</span>
                             </div>
                             {node.severity && (
                               <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase
@@ -396,6 +376,14 @@ export default function RepoGraph() {
             </div>
           </div>
         </div>
+
+        <RepoChat 
+          question={question} 
+          setQuestion={setQuestion} 
+          handleAsk={handleAsk} 
+          asking={asking} 
+          analysis={analysis} 
+        />
 
         {/* CSS for custom scrollbar */}
         <style>{`

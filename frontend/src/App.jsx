@@ -10,7 +10,6 @@ import Scans from './pages/Dashboard/Scans';
 import Logs from './pages/Dashboard/Logs';
 import Reports from './pages/Dashboard/Reports';
 import { AuthProvider, useAuth } from './context/authContext';
-import GitConnect from './pages/Dashboard/gitConnect';
 import ApiEndpoints from './pages/Dashboard/apiEndpoints';
 import Analytics from './pages/Dashboard/Analytics';
 import Repo from './pages/Dashboard/repo';
@@ -47,7 +46,7 @@ function App() {
           <Route path="/logs" element={<ProtectedRoute><Logs /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-          <Route path="/git-connect" element={<ProtectedRoute><GitConnect /></ProtectedRoute>} />
+          <Route path="/git-connect" element={<Navigate to="/repo" />} />
           <Route path="/api-endpoints" element={<ProtectedRoute><ApiEndpoints /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/repo" element={<ProtectedRoute><Repo /></ProtectedRoute>} />

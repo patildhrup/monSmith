@@ -20,7 +20,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         {
             title: 'GitHub',
             items: [
-                { name: 'Connect', icon: <Github size={20} />, path: '/git-connect' },
                 { name: 'Repositories', icon: <GitBranch size={20} />, path: '/repo' },
                 { name: 'Repo Graph', icon: <GitGraph size={20} />, path: '/repo-graph' },
             ]
