@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
     ShieldCheck, AlertCircle, Loader2, FileText,
-    Globe, Zap, Terminal, Lock, ChevronLeft, ArrowRight
+    Globe, Zap, Terminal, Lock, ChevronLeft, ArrowRight,
+    Radio, Info
 } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
 
@@ -167,7 +168,7 @@ const Reports = () => {
 
                     {/* Vulnerabilities List */}
                     <div className="space-y-6">
-                        <h3 className="text-2xl font-bold flex items-center gap-2 px-4 text-green-400">
+                        <h3 className="text-2xl font-bold flex items-center gap-2 px-4 text-primary">
                             <Zap size={24} />
                             Detected Vulnerabilities
                         </h3>
@@ -176,17 +177,18 @@ const Reports = () => {
                             report.vulnerabilities.map((vuln, idx) => (
                                 <div key={idx} className="group relative">
                                     <div className="absolute -inset-0.5 bg-gradient-to-r from-white/10 to-white/5 rounded-[32px] blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
-                                    <div className="relative bg-[#0A0A0A] border border-white/5 rounded-[32px] overflow-hidden">
+                                    <div className="relative bg-card/60 backdrop-blur-xl border border-white/5 rounded-[32px] overflow-hidden">
                                         <div className="p-8">
                                             <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
                                                 <div className="space-y-1">
                                                     <div className="flex items-center gap-3">
                                                         <h4 className="text-2xl font-bold text-foreground">{vuln.name}</h4>
-                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter ${vuln.severity === 'Critical' ? 'bg-destructive/20 text-destructive' :
-                                                                vuln.severity === 'High' ? 'bg-orange-500/20 text-orange-400' :
-                                                                    vuln.severity === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                                        'bg-primary/20 text-primary'
-                                                            }`}>
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter ${
+                                                            vuln.severity === 'Critical' ? 'bg-destructive/20 text-destructive' :
+                                                            vuln.severity === 'High' ? 'bg-orange-500/20 text-orange-400' :
+                                                            vuln.severity === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                            'bg-primary/20 text-primary'
+                                                        }`}>
                                                             {vuln.severity}
                                                         </span>
                                                     </div>
@@ -204,11 +206,11 @@ const Reports = () => {
                                                 <div className="space-y-6">
                                                     <div>
                                                         <h5 className="text-xs font-bold text-primary uppercase tracking-widest mb-2">Description</h5>
-                                                        <p className="text-muted-foreground leading-relaxed">{vuln.description}</p>
+                                                        <p className="text-muted-foreground leading-relaxed text-sm">{vuln.description}</p>
                                                     </div>
                                                     <div>
                                                         <h5 className="text-xs font-bold text-destructive uppercase tracking-widest mb-2">Risk Impact</h5>
-                                                        <p className="text-muted-foreground leading-relaxed">{vuln.impact}</p>
+                                                        <p className="text-muted-foreground leading-relaxed text-sm">{vuln.impact}</p>
                                                     </div>
                                                 </div>
                                                 <div className="space-y-6">
@@ -217,14 +219,14 @@ const Reports = () => {
                                                             <Terminal size={14} />
                                                             Attack Scenario
                                                         </h5>
-                                                        <p className="text-sm text-muted-foreground leading-relaxed font-mono">{vuln.attack_scenario}</p>
+                                                        <p className="text-xs text-muted-foreground leading-relaxed font-mono">{vuln.attack_scenario}</p>
                                                     </div>
                                                     <div className="bg-primary/5 p-6 rounded-2xl border border-primary/10">
                                                         <h5 className="text-xs font-bold text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
                                                             <Lock size={14} />
                                                             Remediation / Fix
                                                         </h5>
-                                                        <p className="text-sm text-muted-foreground leading-relaxed">{vuln.fix}</p>
+                                                        <p className="text-xs text-muted-foreground leading-relaxed">{vuln.fix}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -240,6 +242,53 @@ const Reports = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* Zombie Endpoints Section */}
+                    {scanDetails.zombie_apis?.length > 0 && (
+                        <div className="space-y-6">
+                            <h3 className="text-2xl font-bold flex items-center gap-2 px-4 text-indigo-400">
+                                <Radio size={24} />
+                                Discovered Endpoints & Zombie APIs
+                            </h3>
+                            <div className="bg-card/40 backdrop-blur-xl border border-white/10 rounded-[40px] p-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {scanDetails.zombie_apis.map((api, idx) => (
+                                        <div key={idx} className="flex flex-col p-5 bg-white/5 rounded-2xl border border-white/5 hover:border-indigo-500/30 transition-all group">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
+                                                        api.method === 'GET' ? 'bg-blue-500/20 text-blue-400' :
+                                                        api.method === 'POST' ? 'bg-green-500/20 text-green-400' :
+                                                        'bg-amber-500/20 text-amber-400'
+                                                    }`}>
+                                                        {api.method || 'GET'}
+                                                    </span>
+                                                    <span className="text-sm font-mono text-indigo-300 truncate max-w-[200px]">{api.endpoint}</span>
+                                                </div>
+                                                <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                                    api.risk === 'high' ? 'text-destructive' : 'text-amber-500'
+                                                }`}>
+                                                    {api.risk?.toUpperCase()} RISK
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground leading-relaxed mb-1">
+                                                <span className="text-indigo-500/70 font-bold uppercase tracking-tighter mr-1">Discovery:</span> 
+                                                {api.reason || api.type || "Identified as a potentially exposed endpoint."}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-6 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl flex items-center gap-3">
+                                    <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
+                                        <Info size={16} />
+                                    </div>
+                                    <p className="text-[11px] text-indigo-300 leading-relaxed italic">
+                                        <strong>Pro Tip:</strong> These endpoints were discovered across your codebase. "High Risk" indicates endpoints that are active but lack clear documentation or proper security guards.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </DashboardLayout>

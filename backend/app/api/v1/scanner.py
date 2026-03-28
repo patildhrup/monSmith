@@ -418,7 +418,26 @@ async def get_scan_details(job_id: str, current_user: dict = Depends(get_current
     scan = await db.scans.find_one({"job_id": job_id, "user_email": current_user["email"]})
     if not scan:
         raise HTTPException(status_code=404, detail="Scan not found")
-    # Return everything including AI report
+    
+    # Prepare High-Fidelity Report using SecurityReportEngine
+    engine = SecurityReportEngine()
+    
+    results = scan.get("results", {})
+    # Extract findings from both URL and Repo scans
+    zombie_findings = results.get("zombie_findings") or results.get("zombie_apis") or []
+    
+    # Parse raw tool outputs (Nuclei/Subzy/Bandit) into structured vulnerabilities
+    vulnerabilities = engine.parse_raw_findings(scan)
+    
+    # Generate unified frontend-compatible report
+    unified = engine.generate_unified_report(vulnerabilities, zombie_findings)
+    
+    # Merge unified results into response
+    scan["ai_report"] = unified["ai_report"]
+    scan["summary"] = unified["summary"]
+    scan["top_risks"] = unified["top_risks"]
+    scan["zombie_apis"] = unified["zombie_apis"]
+    
     scan["_id"] = str(scan["_id"])
     return scan
 
