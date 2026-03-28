@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { Share2 } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
@@ -36,6 +38,7 @@ const API_BASE = "http://localhost:8000/api/v1";
 
 // ── main component ────────────────────────────────────────────────────────────
 export default function Repo() {
+  const navigate = useNavigate();
   const [repos, setRepos]           = useState([]);
   const [selectedRepo, setSelected] = useState(null);
   const [scanning, setScanning]     = useState(false);
@@ -264,6 +267,25 @@ export default function Repo() {
                     <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>{s.label}</div>
                   </div>
                 ))}
+              </div>
+
+              {/* Graph Trigger */}
+              <div style={{ marginBottom: 24, display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => navigate(`/repo-graph/${results.job_id}`)}
+                  style={{
+                    background: "rgba(99,102,241,.1)",
+                    border: "1px solid rgba(99,102,241,.25)",
+                    borderRadius: 12, padding: "12px 24px",
+                    color: "#818cf8", fontWeight: 700, fontSize: 13,
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+                    transition: "all .2s",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,.2)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,.1)"}
+                >
+                  <Share2 size={16} /> Explore Architecture Graph →
+                </button>
               </div>
 
               {/* tabs */}

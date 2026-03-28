@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from app.scanner.vulnerability_scan.vul_scan import perform_vulnerability_scan, perform_dast_scan
 from app.scanner.vulnerability_scan.zombie_scan import ZombieScanner
 from app.scanner.vulnerability_scan.report_engine import SecurityReportEngine
+from app.scanner.vulnerability_scan.graph_engine import GraphSecurityEngine
 from app.scanner.scanner import scanner_service # Keep for LLM if needed
 from app.core.auth_utils import get_current_user
 from app.db.db import db
@@ -178,8 +179,13 @@ async def run_repo_scan_task(job_id: str, repo_url: str, user_email: str, token:
         # 1. Init (Cloning)
         await on_progress({"current_stage": "init", "message": f"Cloning repository {repo_url}..."})
         
-        temp_dir = f"./temp_scan_{job_id}"
+        import tempfile
         import subprocess
+        import shutil
+
+        # Create a temporary directory outside the project root to avoid Uvicorn reload
+        temp_dir = tempfile.mkdtemp(prefix=f"monSmith_scan_{job_id}_")
+        
         clone_res = subprocess.run(["git", "clone", "--depth", "1", repo_url, temp_dir], capture_output=True, text=True)
         
         if clone_res.returncode != 0:
@@ -213,7 +219,16 @@ async def run_repo_scan_task(job_id: str, repo_url: str, user_email: str, token:
         
         all_vulns = sast_vulns + normalised_ai_vulns
 
-        # 4. Unified Report
+        # 4. Graph Ingestion
+        try:
+            await on_progress({"current_stage": "graph", "message": "Populating Neo4j Security Graph..."})
+            ge = GraphSecurityEngine()
+            ge.ingest_repo(temp_dir, repo_url, all_vulns)
+            ge.close()
+        except Exception as ge_err:
+            logger.error(f"Graph ingestion failed: {ge_err}")
+
+        # 5. Unified Report
         await on_progress({"current_stage": "report", "message": "Generating unified security report..."})
         engine = SecurityReportEngine()
         final_report = engine.generate_unified_report(all_vulns, zombie_result.get("zombie_apis", []))
@@ -224,9 +239,7 @@ async def run_repo_scan_task(job_id: str, repo_url: str, user_email: str, token:
         final_report["zombie_summary"] = zombie_result.get("summary", {})
         final_report["all_endpoints"] = zombie_result.get("all_endpoints", [])
 
-        # Clean up
-        import shutil
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        # 5. Report (Finalizing)
 
         scan_doc = {
             "job_id": job_id,
@@ -257,6 +270,11 @@ async def run_repo_scan_task(job_id: str, repo_url: str, user_email: str, token:
         if job_id in scan_jobs:
             scan_jobs[job_id].update(error_data)
         await broadcast_status(job_id, error_data)
+        
+    finally:
+        # Final cleanup of temporary directory
+        if 'temp_dir' in locals():
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 @router.post("/scan-repo", response_model=ScanStatus)
 async def start_repo_scan(request: RepoScanRequest, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
@@ -403,6 +421,26 @@ async def get_scan_details(job_id: str, current_user: dict = Depends(get_current
     # Return everything including AI report
     scan["_id"] = str(scan["_id"])
     return scan
+
+@router.get("/graph-analysis/{job_id}")
+async def get_graph_analysis(job_id: str, question: str = "Identify zombie APIs and high risk dependencies", current_user: dict = Depends(get_current_user)):
+    """
+    AI-powered architectural security analysis using Neo4j and LangChain.
+    """
+    ge = GraphSecurityEngine()
+    analysis = await ge.analyze_graph(question)
+    ge.close()
+    return analysis
+
+@router.get("/graph-data/{job_id}")
+async def get_graph_data(job_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Returns raw node/link data for visualization.
+    """
+    ge = GraphSecurityEngine()
+    data = ge.get_raw_graph_data()
+    ge.close()
+    return data
 
 @router.post("/results/{job_id}")
 async def upload_results(

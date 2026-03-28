@@ -13,6 +13,7 @@ email-validator
 sendgrid
 langchain
 langchain-groq
+langchain-community
 boto3
 bandit
 beautifulsoup4
@@ -20,3 +21,8 @@ zaproxy
 scikit-learn
 pandas
 docker
+neo4j
+langchain-neo4j
+langchain-core
+langchain-huggingface
+

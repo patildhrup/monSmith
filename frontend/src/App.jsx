@@ -15,6 +15,7 @@ import ApiEndpoints from './pages/Dashboard/apiEndpoints';
 import Analytics from './pages/Dashboard/Analytics';
 import Repo from './pages/Dashboard/repo';
 import Alerts from './pages/Dashboard/Alerts';
+import RepoGraph from './pages/Dashboard/repo-graph';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -50,6 +51,7 @@ function App() {
           <Route path="/api-endpoints" element={<ProtectedRoute><ApiEndpoints /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/repo" element={<ProtectedRoute><Repo /></ProtectedRoute>} />
+          <Route path="/repo-graph/:jobId?" element={<ProtectedRoute><RepoGraph /></ProtectedRoute>} />
           <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
         </Routes>
       </Router>
