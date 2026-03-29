@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Globe, History, ScrollText, BarChart3, Webhook, Settings, ShieldAlert, Plus, LogOut, Github, ClipboardPen, GitBranch, ChevronLeft, ChevronRight, GitGraph, CircleAlert } from 'lucide-react';
+import { LayoutDashboard, Globe, History, ScrollText, BarChart3, Webhook, Settings, ShieldAlert, Plus, LogOut, Github, ClipboardPen, GitBranch, ChevronLeft, ChevronRight, GitGraph, CircleAlert, Code } from 'lucide-react';
 import { useAuth } from '../context/authContext';
 
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
@@ -22,6 +22,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             items: [
                 { name: 'Repositories', icon: <GitBranch size={20} />, path: '/repo' },
                 { name: 'Repo Graph', icon: <GitGraph size={20} />, path: '/repo-graph' },
+                { name: 'Code Endpoints', icon: <Code size={20} />, path: '/code-endpoints' },
             ]
         },
         {

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import { useAuth } from "../../context/authContext";
+import { useRepo } from "../../context/repoContext";
 import {
     Select,
     SelectContent,
@@ -50,19 +51,16 @@ const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8000") + "/a
 // ── main component ────────────────────────────────────────────────────────────
 export default function Repo() {
   const { user, token, fetchProfile } = useAuth();
+  const { repos, setRepos, selectedRepo, setSelectedRepo, scanResults, setScanResults, setScanJobId, connected, setConnected } = useRepo();
   const navigate = useNavigate();
-  const [repos, setRepos]           = useState([]);
-  const [selectedRepo, setSelected] = useState(null);
   const [scanning, setScanning]     = useState(false);
   const [stage, setStage]           = useState("");
-  const [results, setResults]       = useState(null);
+  const [results, setResults]       = useState(scanResults);
   const [error, setError]           = useState("");
   const [activeTab, setActiveTab]   = useState("zombie");
-  const [connected, setConnected]   = useState(false);
   const [fetchingRepos, setFetchingRepos] = useState(false);
   const wsRef = useRef(null);
 
-  // ── fetch connected repos ────────────────────────────────────────────────
   // ── fetch connected repos ────────────────────────────────────────────────
   const loadRepos = useCallback(async () => {
     if (!token) return;
@@ -83,7 +81,7 @@ export default function Repo() {
     } finally {
       setFetchingRepos(false);
     }
-  }, [token]);
+  }, [token, setRepos, setConnected]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -98,15 +96,18 @@ export default function Repo() {
     }
 
     if (user?.github_token || user?.has_github_connected || token) {
-        loadRepos();
+        // Only load repos if not already loaded
+        if (repos.length === 0) loadRepos();
+        else setConnected(true);
     }
-  }, [user, fetchProfile, token, loadRepos]);
+  }, [user, fetchProfile, token, loadRepos, repos.length]);
 
   // ── start scan ───────────────────────────────────────────────────────────
   const startScan = async () => {
     if (!selectedRepo) return;
     setScanning(true);
     setResults(null);
+    setScanResults(null);
     setError("");
     setStage("Initializing...");
 
@@ -133,6 +134,8 @@ export default function Repo() {
         setStage(data.message || data.current_stage || "");
         if (data.status === "completed" && data.results) {
           setResults(data.results);
+          setScanResults(data.results);  // persist to context
+          setScanJobId(job.job_id);      // persist job id to context
           setScanning(false);
           setStage("Scan complete!");
           ws.close();
@@ -253,7 +256,7 @@ export default function Repo() {
               <label style={{ fontSize: 12, color: "#94a3b8", display: "block", marginBottom: 6, marginLeft: 4 }}>SELECT REPOSITORY</label>
               <Select
                 value={selectedRepo?.url || ""}
-                onValueChange={(val) => setSelected(repos.find(r => r.url === val) || null)}
+                onValueChange={(val) => setSelectedRepo(repos.find(r => r.url === val) || null)}
                 disabled={fetchingRepos || scanning}
               >
                 <SelectTrigger className="w-full bg-white/5 border-white/10 text-white focus:ring-indigo-500/50 h-11 rounded-xl">

@@ -32,6 +32,8 @@ RUN go install github.com/projectdiscovery/httpx/cmd/httpx@latest
 RUN go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
 RUN go install github.com/PentestPad/subzy@latest
 RUN go install github.com/ffuf/ffuf/v2@latest
+RUN go install github.com/projectdiscovery/katana/cmd/katana@latest
+
 
 # Update nuclei templates
 RUN /root/go/bin/nuclei -update-templates

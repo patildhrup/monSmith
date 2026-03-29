@@ -12,7 +12,7 @@ from app.scanner.vulnerability_scan.vul_scan import perform_vulnerability_scan, 
 from app.scanner.vulnerability_scan.zombie_scan import ZombieScanner
 from app.scanner.vulnerability_scan.report_engine import SecurityReportEngine
 from app.scanner.vulnerability_scan.graph_engine import GraphSecurityEngine
-from app.scanner.scanner import scanner_service # Keep for LLM if needed
+from app.scanner.vulnerability_scan.endpoints_scanner import scanner_service # Keep for LLM if needed
 from app.core.auth_utils import get_current_user
 from app.db.db import db
 from pydantic import BaseModel

@@ -35,24 +35,32 @@ const Alerts = () => {
 
   // Flatten all vulnerabilities from all completed scans into alert items
   const allAlerts = scans.flatMap(scan => {
-    const vulns = scan.results?.vulnerabilities || scan.results?.ai_report?.vulnerabilities || [];
-    const zombies = scan.results?.zombie_apis || [];
+    const rawVulns = scan.results?.vulnerabilities
+      || scan.results?.ai_report?.vulnerabilities
+      || [];
+    const rawZombies = scan.results?.zombie_apis
+      || scan.results?.zombie_findings
+      || [];
+
+    // Defensively ensure both are arrays (backend may return objects or strings)
+    const vulns   = Array.isArray(rawVulns)   ? rawVulns   : [];
+    const zombies = Array.isArray(rawZombies) ? rawZombies : [];
 
     const vulnAlerts = vulns.map(v => ({
-      id: `${scan.job_id}-v-${v.title || v.name}`,
+      id: `${scan.job_id}-v-${v.title || v.name || v.issue || Math.random()}`,
       title: v.title || v.name || v.issue || 'Vulnerability Detected',
       description: v.description || v.impact || '',
-      severity: (v.severity || 'medium').toLowerCase(),
+      severity: (typeof v.severity === 'string' ? v.severity : 'medium').toLowerCase(),
       source: scan.target,
       type: 'vulnerability',
       fix: v.fix || '',
     }));
 
     const zombieAlerts = zombies.map(z => ({
-      id: `${scan.job_id}-z-${z.endpoint}`,
-      title: `Zombie API: ${z.endpoint}`,
+      id: `${scan.job_id}-z-${z.endpoint || Math.random()}`,
+      title: `Zombie API: ${z.endpoint || 'Unknown'}`,
       description: z.reason || 'Suspicious or deprecated endpoint detected.',
-      severity: (z.risk || 'medium').toLowerCase(),
+      severity: (typeof z.risk === 'string' ? z.risk : 'medium').toLowerCase(),
       source: scan.target,
       type: 'zombie',
       fix: 'Review and decommission or secure this endpoint.',
