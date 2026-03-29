@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/authContext';
+import { useRepo } from '../../context/repoContext';
 import {
   Terminal, Shield, Zap, AlertTriangle, Search,
   ChevronRight, Sparkles, Share2, Maximize2, RefreshCw,
   MessageSquare, Settings, Filter, Download,
-  ArrowLeft, Info, FileCode, Radio
+  ArrowLeft, Info, FileCode, Radio, GitBranch, ArrowRight, GitGraph
 } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
 import RepoChat from '../../components/repoChat';
@@ -31,6 +32,7 @@ const NodeIndicator = ({ type }) => {
 export default function RepoGraph() {
   const { jobId } = useParams();
   const { token } = useAuth();
+  const { selectedRepo, scanJobId } = useRepo();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -46,11 +48,66 @@ export default function RepoGraph() {
   const dashboardRef = useRef(null);
   const fgRef = useRef();
 
+  // Resolve the effective job ID — from URL param or persisted context
+  const effectiveJobId = jobId || scanJobId;
+
+  // ── No repo selected ─────────────────────────────────────────────────────
+  if (!selectedRepo && !effectiveJobId) {
+    return (
+      <DashboardLayout>
+        <div className="py-16 flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="w-full max-w-md text-center">
+            <div className="w-20 h-20 rounded-3xl bg-slate-800/60 border border-white/8 flex items-center justify-center mx-auto mb-6">
+              <GitGraph size={36} className="text-indigo-400 opacity-70" />
+            </div>
+            <h2 className="text-2xl font-black text-white mb-3">No Repository Selected</h2>
+            <p className="text-slate-400 text-sm leading-relaxed mb-8">
+              Go to the <strong className="text-white">Repositories</strong> tab, select a repo, and run a scan to visualise the architecture graph.
+            </p>
+            <button
+              onClick={() => navigate('/repo')}
+              className="inline-flex items-center gap-2.5 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/25 active:scale-95"
+            >
+              <GitBranch size={16} /> Go to Repositories <ArrowRight size={14} />
+            </button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // ── Repo selected but no scan run yet ────────────────────────────────────
+  if (selectedRepo && !effectiveJobId) {
+    return (
+      <DashboardLayout>
+        <div className="py-16 flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="w-full max-w-md text-center">
+            <div className="w-20 h-20 rounded-3xl bg-slate-800/60 border border-white/8 flex items-center justify-center mx-auto mb-6">
+              <Radio size={36} className="text-amber-400 opacity-70" />
+            </div>
+            <h2 className="text-2xl font-black text-white mb-3">Scan Required</h2>
+            <p className="text-slate-400 text-sm mb-2">
+              Repository: <span className="text-indigo-400 font-mono">{selectedRepo.name?.split('/').pop() || selectedRepo.name}</span>
+            </p>
+            <p className="text-slate-500 text-sm leading-relaxed mb-8 max-w-sm mx-auto">
+              Run a security scan on this repository to generate the architecture knowledge graph.
+            </p>
+            <button
+              onClick={() => navigate('/repo')}
+              className="inline-flex items-center gap-2.5 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/25 active:scale-95"
+            >
+              <Zap size={16} /> Run Scan <ArrowRight size={14} />
+            </button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   // --- Fetch Data ---
 
   useEffect(() => {
-    if (!jobId) {
-      setError("No job ID provided. Please start a scan first.");
+    if (!effectiveJobId) {
       setLoading(false);
       return;
     }
@@ -60,12 +117,12 @@ export default function RepoGraph() {
         const authToken = token || localStorage.getItem("token");
         const headers = { Authorization: `Bearer ${authToken}` };
 
-        const dataRes = await fetch(`${API_BASE}/scanner/graph-data/${jobId}`, { headers });
+        const dataRes = await fetch(`${API_BASE}/scanner/graph-data/${effectiveJobId}`, { headers });
         const data = await dataRes.json();
         setGraphData(data);
 
         // 2. Fetch Initial Analysis
-        const analysisRes = await fetch(`${API_BASE}/scanner/graph-analysis/${jobId}`, { headers });
+        const analysisRes = await fetch(`${API_BASE}/scanner/graph-analysis/${effectiveJobId}`, { headers });
         const analysisData = await analysisRes.json();
         setAnalysis(analysisData);
 
@@ -78,7 +135,7 @@ export default function RepoGraph() {
     };
 
     fetchData();
-  }, [jobId, token]);
+  }, [effectiveJobId, token]);
 
   // Handle Entrance Animations after loading
   useEffect(() => {

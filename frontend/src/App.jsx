@@ -18,6 +18,7 @@ import Repo from './pages/Dashboard/repo';
 import Alerts from './pages/Dashboard/Alerts';
 import RepoGraph from './pages/Dashboard/repo-graph';
 import CodeEndpoints from './pages/Dashboard/code-endpoints';
+import NotFound from './pages/Dashboard/PageNotFound';
 
 // Per-route error boundary — prevents one crashed page from blocking the whole app
 class RouteErrorBoundary extends Component {
@@ -91,6 +92,7 @@ function App() {
           <Route path="/repo-graph/:jobId?" element={<ProtectedRoute><E><RepoProvider><RepoGraph /></RepoProvider></E></ProtectedRoute>} />
           <Route path="/code-endpoints" element={<ProtectedRoute><E><RepoProvider><CodeEndpoints /></RepoProvider></E></ProtectedRoute>} />
           <Route path="/alerts" element={<ProtectedRoute><E><Alerts /></E></ProtectedRoute>} />
+          <Route path="*" element={<E><NotFound /></E>} />
         </Routes>
       </Router>
     </AuthProvider>
