@@ -13,7 +13,7 @@ import RepoChat from '../../components/repoChat';
 import { gsap } from 'gsap';
 import ForceGraph2D from 'react-force-graph-2d';
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8000") + "/api/v1";
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "http://localhost:8000") + "/api/v1";
 
 // --- Components ---
 
@@ -115,7 +115,10 @@ export default function RepoGraph() {
     const fetchData = async () => {
       try {
         const authToken = token || localStorage.getItem("token");
-        const headers = { Authorization: `Bearer ${authToken}` };
+        const headers = { 
+          Authorization: `Bearer ${authToken}`,
+          "ngrok-skip-browser-warning": "true"
+        };
 
         const dataRes = await fetch(`${API_BASE}/scanner/graph-data/${effectiveJobId}`, { headers });
         const data = await dataRes.json();
@@ -161,7 +164,10 @@ export default function RepoGraph() {
     try {
       const authToken = token || localStorage.getItem("token");
       const res = await fetch(`${API_BASE}/scanner/graph-analysis/${jobId}?question=${encodeURIComponent(question)}`, {
-        headers: { Authorization: `Bearer ${authToken}` }
+        headers: { 
+          Authorization: `Bearer ${authToken}`,
+          "ngrok-skip-browser-warning": "true"
+        }
       });
       const data = await res.json();
       setAnalysis(data);

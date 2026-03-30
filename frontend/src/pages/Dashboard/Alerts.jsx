@@ -1,28 +1,26 @@
 import { useState, useEffect } from 'react';
 import { CircleAlert, ShieldAlert, AlertTriangle, Info, CheckCircle2, RefreshCw } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { api } from '../../services/api';
 
 const SEVERITY_CONFIG = {
   critical: { color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/25', icon: <ShieldAlert size={18} />, label: 'Critical' },
-  high:     { color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/25', icon: <AlertTriangle size={18} />, label: 'High' },
-  medium:   { color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/25', icon: <CircleAlert size={18} />, label: 'Medium' },
-  low:      { color: 'text-green-400', bg: 'bg-green-400/10', border: 'border-green-400/25', icon: <Info size={18} />, label: 'Low' },
+  high: { color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/25', icon: <AlertTriangle size={18} />, label: 'High' },
+  medium: { color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/25', icon: <CircleAlert size={18} />, label: 'Medium' },
+  low: { color: 'text-green-400', bg: 'bg-green-400/10', border: 'border-green-400/25', icon: <Info size={18} />, label: 'Low' },
 };
 
 const Alerts = () => {
-  const [scans, setScans]       = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [filter, setFilter]     = useState('all');
+  const [scans, setScans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => { fetchAlerts(); }, []);
 
   const fetchAlerts = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8000/api/v1/scanner/history', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.getHistory();
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
       setScans(data);
@@ -43,7 +41,7 @@ const Alerts = () => {
       || [];
 
     // Defensively ensure both are arrays (backend may return objects or strings)
-    const vulns   = Array.isArray(rawVulns)   ? rawVulns   : [];
+    const vulns = Array.isArray(rawVulns) ? rawVulns : [];
     const zombies = Array.isArray(rawZombies) ? rawZombies : [];
 
     const vulnAlerts = vulns.map(v => ({
@@ -73,9 +71,9 @@ const Alerts = () => {
 
   const counts = {
     critical: allAlerts.filter(a => a.severity === 'critical').length,
-    high:     allAlerts.filter(a => a.severity === 'high').length,
-    medium:   allAlerts.filter(a => a.severity === 'medium').length,
-    low:      allAlerts.filter(a => a.severity === 'low').length,
+    high: allAlerts.filter(a => a.severity === 'high').length,
+    medium: allAlerts.filter(a => a.severity === 'medium').length,
+    low: allAlerts.filter(a => a.severity === 'low').length,
   };
 
   return (
@@ -123,11 +121,10 @@ const Alerts = () => {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-all capitalize ${
-                filter === f
+              className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-all capitalize ${filter === f
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'bg-muted/30 text-muted-foreground border-white/10 hover:bg-muted/60'
-              }`}
+                }`}
             >
               {f === 'all' ? `All (${allAlerts.length})` : `${f} (${counts[f]})`}
             </button>

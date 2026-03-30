@@ -3,12 +3,22 @@ from fastapi import FastAPI
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import auth, scanner, github
+from pyngrok import ngrok
+import os
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="monSmith API")
+
+
+@app.on_event("startup")
+def start_ngrok():
+    tunnel = ngrok.connect(8000)
+    os.environ["BACKEND_URL"] = tunnel.public_url
+    print(f"🚀 Ngrok URL: {tunnel.public_url}")
 
 # CORS configuration
 origins = [
@@ -24,6 +34,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])

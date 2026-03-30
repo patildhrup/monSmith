@@ -6,6 +6,7 @@ import {
     Radio, Info
 } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { api } from '../../services/api';
 
 const Reports = () => {
     const location = useLocation();
@@ -24,12 +25,7 @@ const Reports = () => {
 
     const fetchDetails = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8000/api/v1/scanner/details/${jobId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await api.getDetails(jobId);
             if (!response.ok) throw new Error('Failed to fetch report details');
             const data = await response.json();
             setScanDetails(data);
@@ -147,7 +143,7 @@ const Reports = () => {
                                         strokeDashoffset={2 * Math.PI * 58 * (1 - report.risk_score / 10)}
                                         strokeLinecap="round"
                                         className={`transition-all duration-1000 ${report.risk_score > 7 ? 'text-destructive' :
-                                                report.risk_score > 4 ? 'text-orange-400' : 'text-primary'
+                                            report.risk_score > 4 ? 'text-orange-400' : 'text-primary'
                                             }`}
                                     />
                                 </svg>
@@ -183,12 +179,11 @@ const Reports = () => {
                                                 <div className="space-y-1">
                                                     <div className="flex items-center gap-3">
                                                         <h4 className="text-2xl font-bold text-foreground">{vuln.name}</h4>
-                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter ${
-                                                            vuln.severity === 'Critical' ? 'bg-destructive/20 text-destructive' :
-                                                            vuln.severity === 'High' ? 'bg-orange-500/20 text-orange-400' :
-                                                            vuln.severity === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                            'bg-primary/20 text-primary'
-                                                        }`}>
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter ${vuln.severity === 'Critical' ? 'bg-destructive/20 text-destructive' :
+                                                                vuln.severity === 'High' ? 'bg-orange-500/20 text-orange-400' :
+                                                                    vuln.severity === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                                        'bg-primary/20 text-primary'
+                                                            }`}>
                                                             {vuln.severity}
                                                         </span>
                                                     </div>
@@ -256,23 +251,21 @@ const Reports = () => {
                                         <div key={idx} className="flex flex-col p-5 bg-white/5 rounded-2xl border border-white/5 hover:border-indigo-500/30 transition-all group">
                                             <div className="flex items-center justify-between mb-3">
                                                 <div className="flex items-center gap-3">
-                                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
-                                                        api.method === 'GET' ? 'bg-blue-500/20 text-blue-400' :
-                                                        api.method === 'POST' ? 'bg-green-500/20 text-green-400' :
-                                                        'bg-amber-500/20 text-amber-400'
-                                                    }`}>
+                                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${api.method === 'GET' ? 'bg-blue-500/20 text-blue-400' :
+                                                            api.method === 'POST' ? 'bg-green-500/20 text-green-400' :
+                                                                'bg-amber-500/20 text-amber-400'
+                                                        }`}>
                                                         {api.method || 'GET'}
                                                     </span>
                                                     <span className="text-sm font-mono text-indigo-300 truncate max-w-[200px]">{api.endpoint}</span>
                                                 </div>
-                                                <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                                    api.risk === 'high' ? 'text-destructive' : 'text-amber-500'
-                                                }`}>
+                                                <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${api.risk === 'high' ? 'text-destructive' : 'text-amber-500'
+                                                    }`}>
                                                     {api.risk?.toUpperCase()} RISK
                                                 </div>
                                             </div>
                                             <p className="text-xs text-muted-foreground leading-relaxed mb-1">
-                                                <span className="text-indigo-500/70 font-bold uppercase tracking-tighter mr-1">Discovery:</span> 
+                                                <span className="text-indigo-500/70 font-bold uppercase tracking-tighter mr-1">Discovery:</span>
                                                 {api.reason || api.type || "Identified as a potentially exposed endpoint."}
                                             </p>
                                         </div>

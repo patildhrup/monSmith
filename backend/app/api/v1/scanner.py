@@ -7,6 +7,7 @@ import asyncio
 import logging
 import json
 import random
+import boto3
 from datetime import datetime, timedelta
 from app.scanner.vulnerability_scan.vul_scan import perform_vulnerability_scan, perform_dast_scan
 from app.scanner.vulnerability_scan.zombie_scan import ZombieScanner
@@ -88,66 +89,94 @@ async def broadcast_status(job_id: str, status_data: dict):
                 logger.error(f"Error broadcasting to {job_id}: {e}")
 
 async def run_scan_task(job_id: str, target: str, user_email: str):
-    async def on_progress(data: dict):
+    async def on_progress(current_stage: str, message: str):
         job_data = scan_jobs.get(job_id)
         if job_data:
-            job_data.update(data)
+            job_data.update({"current_stage": current_stage, "message": message})
             await broadcast_status(job_id, job_data)
 
     try:
-        # 1. Init
-        await on_progress({"current_stage": "init", "message": f"Initializing scan for {target}..."})
-        await asyncio.sleep(1) # Small delay for UI
-        
-        # 2. Subdomains (Visual only for now if not implemented)
-        await on_progress({"current_stage": "subdomains", "message": "Enumerating subdomains and services..."})
-        await asyncio.sleep(1)
+        await on_progress("init", f"Initializing EC2 SSM Scan for {target}...")
 
-        # 3. DAST Scan (Vulnerabilities)
-        await on_progress({"current_stage": "vulnerabilities", "message": f"Performing DAST scan on {target}..."})
-        dast_vulns = await perform_dast_scan(target)
+        instance_id = os.getenv("AWS_EC2_INSTANCE_ID")
+        if not instance_id:
+            logger.warning("AWS_EC2_INSTANCE_ID not set. Trying to run SSM anyway (might fail if client is not configured globally for an instance)")
+            # In production, ensure this env var is set!
+
+        # Set up BACKEND_URL for the bash script to know where to send webhooks
+        backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
+        webhook_url = f"{backend_url}/api/v1/scanner/webhook"
+
+        region = os.getenv("AWS_DEFAULT_REGION", "ap-south-1")
+        ssm_client = boto3.client('ssm', region_name=region)
+
+        # Forward MONGO_URL to the container so data_to_mongodb.py knows where to upload
+        mongo_url = os.getenv("MONGO_URL", "")
+        mongo_db_name = os.getenv("MONGO_DB_NAME", "monSmith")
         
-        # 4. Zombie Scan (Endpoints)
-        await on_progress({"current_stage": "endpoints", "message": "Detecting zombie APIs from discovered endpoints..."})
-        zs = ZombieScanner(llm=scanner_service.llm)
-        zombies = await zs.perform_zombie_scan(".", target_url=target)
+        # Inject the env vars into docker exec securely
+        command = f"docker exec -e MONGO_URL=\"{mongo_url}\" -e MONGO_DB_NAME=\"{mongo_db_name}\" api-scanner bash /scanner/scan.sh {target} {job_id} {webhook_url}"
         
-        # 5. Report (Finalizing)
-        await on_progress({"current_stage": "report", "message": "Generating unified security report..."})
-        
-        engine = SecurityReportEngine()
-        final_report = engine.generate_unified_report(dast_vulns, zombies)
-        
-        # Store results
+        # Trigger execution out-of-band on the EC2 runner
+        response = ssm_client.send_command(
+            InstanceIds=[instance_id] if instance_id else [],
+            DocumentName="AWS-RunShellScript",
+            Parameters={'commands': [command]},
+            TimeoutSeconds=3600 # 1 hour timeout for security scans
+        )
+
+        command_id = response['Command']['CommandId']
+        logger.info(f"Successfully sent SSM command {command_id} for job {job_id} targeting EC2 {instance_id}")
+
+        await on_progress("init", f"Scan job dispatched to cloud agents. Command ID: {command_id}")
+
+        # Insert initial entry into DB (the script will update it)
         scan_doc = {
             "job_id": job_id,
             "user_email": user_email,
             "target": target,
-            "status": "completed",
-            "current_stage": "completed",
-            "message": "DAST Scan completed!",
-            "results": final_report,
-            "created_at": datetime.utcnow(),
-            "completed_at": datetime.utcnow()
+            "status": "in_progress",
+            "current_stage": "init",
+            "message": "Scan job dispatched",
+            "created_at": datetime.utcnow()
         }
-        
         await db.scans.insert_one(scan_doc)
-        
-        if job_id in scan_jobs:
-            scan_jobs[job_id].update({
-                "status": "completed",
-                "current_stage": "completed",
-                "message": "Scan completed!",
-                "results": final_report
-            })
-            await broadcast_status(job_id, scan_jobs[job_id])
 
     except Exception as e:
-        logger.error(f"Background scan task failed: {e}")
+        logger.error(f"Failed to dispatch SSM scan task: {e}")
         error_data = {"status": "failed", "message": str(e)}
         if job_id in scan_jobs:
             scan_jobs[job_id].update(error_data)
         await broadcast_status(job_id, error_data)
+
+class WebhookPayload(BaseModel):
+    job_id: str
+    target: str
+    status: str
+    current_stage: str
+    message: str
+    results: Optional[dict] = None
+
+@router.post("/webhook")
+async def scanner_webhook(payload: WebhookPayload):
+    """
+    Receives real-time progress updates from the EC2 script and broadcasts to UI.
+    """
+    logger.info(f"Webhook update for {payload.job_id}: {payload.current_stage} - {payload.message}")
+    if payload.job_id in scan_jobs:
+        job_data = scan_jobs[payload.job_id]
+        job_data.update({
+            "status": payload.status,
+            "current_stage": payload.current_stage,
+            "message": payload.message
+        })
+        if payload.results:
+            job_data["results"] = payload.results
+
+        await broadcast_status(payload.job_id, job_data)
+    
+    return {"status": "accepted"}
+
 
 @router.post("/scan", response_model=ScanStatus)
 async def start_scan(request: ScanRequest, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):

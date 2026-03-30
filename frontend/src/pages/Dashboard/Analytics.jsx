@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { api } from '../../services/api';
 import StatCard from '../../components/StatCard';
-import { 
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-    LineChart, Line, AreaChart, Area, PieChart, Pie, Cell 
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    LineChart, Line, AreaChart, Area, PieChart, Pie, Cell
 } from 'recharts';
-import { 
-    Activity, ShieldAlert, Zap, Search, Calendar, Filter, 
+import {
+    Activity, ShieldAlert, Zap, Search, Calendar, Filter,
     ChevronDown, ArrowUpRight, ArrowDownRight, Info, BarChart3, AlertCircle
 } from 'lucide-react';
 
@@ -25,13 +26,7 @@ const Analytics = () => {
         setLoading(true);
         setError(null);
         try {
-            const token = localStorage.getItem('token');
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-            const response = await fetch(`${apiUrl}/api/v1/scanner/analytics`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await api.getAnalytics();
             if (response.ok) {
                 const result = await response.json();
                 setData(result);
@@ -65,7 +60,7 @@ const Analytics = () => {
                         <h2 className="text-xl font-bold mb-2">Failed to load analytics</h2>
                         <p className="text-sm opacity-80">{error}</p>
                     </div>
-                    <button 
+                    <button
                         onClick={fetchAnalytics}
                         className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all"
                     >
@@ -100,7 +95,7 @@ const Analytics = () => {
             {/* Date Range & Grouping Filter Card */}
             <div className="bg-card border border-border/60 rounded-[32px] p-8 mb-10 shadow-sm relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
-                
+
                 <div className="flex items-center gap-2 mb-8 text-foreground font-semibold text-lg">
                     <Calendar className="text-primary" size={20} />
                     <h2>Date Range & Grouping</h2>
@@ -110,29 +105,29 @@ const Analytics = () => {
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-muted-foreground ml-1">Start Date</label>
                         <div className="relative">
-                            <input 
-                                type="date" 
+                            <input
+                                type="date"
                                 className="w-full bg-background border border-border/60 rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors appearance-none"
                                 value={dateRange.start}
-                                onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
+                                onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
                             />
                         </div>
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-muted-foreground ml-1">End Date</label>
                         <div className="relative">
-                            <input 
-                                type="date" 
+                            <input
+                                type="date"
                                 className="w-full bg-background border border-border/60 rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors appearance-none"
                                 value={dateRange.end}
-                                onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+                                onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
                             />
                         </div>
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-muted-foreground ml-1">Group By</label>
                         <div className="relative group/select">
-                            <select 
+                            <select
                                 className="w-full bg-background border border-green-500 rounded-xl px-4 py-3 outline-none appearance-none cursor-pointer font-medium"
                                 value={groupBy}
                                 onChange={(e) => setGroupBy(e.target.value)}
@@ -205,14 +200,14 @@ const Analytics = () => {
                             <AreaChart data={data?.history || []}>
                                 <defs>
                                     <linearGradient id="colorScans" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
-                                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                                 <XAxis dataKey="date" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} dy={10} />
                                 <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} dx={-10} />
-                                <Tooltip 
+                                <Tooltip
                                     contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '14px' }}
                                     itemStyle={{ color: '#22c55e' }}
                                 />
@@ -244,7 +239,7 @@ const Analytics = () => {
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip 
+                                <Tooltip
                                     contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
                                 />
                             </PieChart>
@@ -270,7 +265,7 @@ const Analytics = () => {
 
             {/* Security Score Trend */}
             <div className="bg-card border border-border/60 rounded-[32px] p-8 shadow-sm mb-12">
-                 <div className="flex items-center gap-3 mb-8">
+                <div className="flex items-center gap-3 mb-8">
                     <div className="p-2 bg-yellow-500/10 rounded-xl text-yellow-500">
                         <ShieldAlert size={20} />
                     </div>
@@ -285,14 +280,14 @@ const Analytics = () => {
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                             <XAxis dataKey="date" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} dy={10} />
                             <YAxis domain={[0, 100]} stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} dx={-10} />
-                            <Tooltip 
+                            <Tooltip
                                 contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
                             />
-                            <Line 
-                                type="stepAfter" 
-                                dataKey="score" 
-                                stroke="#eab308" 
-                                strokeWidth={3} 
+                            <Line
+                                type="stepAfter"
+                                dataKey="score"
+                                stroke="#eab308"
+                                strokeWidth={3}
                                 dot={{ fill: '#eab308', strokeWidth: 2, r: 4, strokeWidth: 2 }}
                                 activeDot={{ r: 6, strokeWidth: 0 }}
                             />

@@ -39,14 +39,25 @@ RUN go install github.com/projectdiscovery/katana/cmd/katana@latest
 RUN /root/go/bin/nuclei -update-templates
 
 # Install LinkFinder (Python tool)
-RUN git clone https://github.com/GerbenJavado/LinkFinder.git /opt/LinkFinder && \
-    pip3 install -r /opt/LinkFinder/requirements.txt
+# RUN git clone https://github.com/GerbenJavado/LinkFinder.git /opt/LinkFinder && \
+#     pip3 install -r /opt/LinkFinder/requirements.txt
 
 # Clone SecLists
-RUN git clone https://github.com/danielmiessler/SecLists /opt/seclists
+# RUN git clone https://github.com/danielmiessler/SecLists /opt/seclists
 
 # Set working directory
 WORKDIR /scanner
+
+# Install Python requirements for MongoDB upload
+RUN pip3 install pymongo certifi
+
+# Copy local shell scripts directly into the container
+COPY ./vulnerability_scan/shell/scan.sh /scanner/scan.sh
+COPY ./vulnerability_scan/shell/parser.py /scanner/parser.py
+COPY ./vulnerability_scan/shell/data_to_mongodb.py /scanner/data_to_mongodb.py
+
+# Make the script executable
+RUN chmod +x /scanner/scan.sh
 
 # Default command
 CMD ["/bin/bash"]

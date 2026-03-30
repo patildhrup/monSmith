@@ -46,7 +46,7 @@ const Badge = ({ label, color }) => (
   }}>{label}</span>
 );
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8000") + "/api/v1";
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "http://localhost:8000") + "/api/v1";
 
 // ── main component ────────────────────────────────────────────────────────────
 export default function Repo() {
@@ -67,7 +67,10 @@ export default function Repo() {
     setFetchingRepos(true);
     try {
       const res = await fetch(`${API_BASE}/github/repos`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "true"
+        },
       });
       if (res.ok) {
         const data = await res.json();
@@ -95,7 +98,7 @@ export default function Repo() {
         setError(err.replace(/_/g, ' '));
     }
 
-    if (user?.github_token || user?.has_github_connected || token) {
+    if (user?.github_token || user?.has_github_connected) {
         // Only load repos if not already loaded
         if (repos.length === 0) loadRepos();
         else setConnected(true);
@@ -117,6 +120,7 @@ export default function Repo() {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true"
         },
         body: JSON.stringify({ repo_url: selectedRepo.url }),
       });
@@ -125,7 +129,9 @@ export default function Repo() {
       const job = await res.json();
 
       // Open WebSocket for live updates
-      const wsUrl = `ws://localhost:8000/api/v1/scanner/ws/${job.job_id}`;
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "http://localhost:8000";
+      const wsProtocol = backendUrl.startsWith("https") ? "wss" : "ws";
+      const wsUrl = `${wsProtocol}://${backendUrl.replace(/^https?:\/\//, "")}/api/v1/scanner/ws/${job.job_id}`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
@@ -164,7 +170,7 @@ export default function Repo() {
         return;
     }
     const state = btoa(user?.email || "");
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=repo,read:user&state=${state}&redirect_uri=http://localhost:8000/auth/callback`;
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=repo,read:user&state=${state}&redirect_uri=${import.meta.env.VITE_BACKEND_URL}/auth/callback`;
   };
 
   // ── derive counts ────────────────────────────────────────────────────────

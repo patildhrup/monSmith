@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { History, Search, ExternalLink, ShieldCheck, AlertCircle, Clock, Globe, ArrowRight } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { api } from '../../services/api';
 import { Link } from 'react-router-dom';
 
 const Scans = () => {
@@ -14,12 +15,7 @@ const Scans = () => {
 
     const fetchHistory = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8000/api/v1/scanner/history', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await api.getHistory();
             if (!response.ok) throw new Error('Failed to fetch history');
             const data = await response.json();
             setScans(data);
@@ -99,7 +95,7 @@ const Scans = () => {
                                                 </span>
                                                 <span className="flex items-center gap-1.5 capitalize">
                                                     <div className={`w-2 h-2 rounded-full ${scan.status === 'completed' ? 'bg-primary' :
-                                                            scan.status === 'failed' ? 'bg-destructive' : 'bg-orange-400 animate-pulse'
+                                                        scan.status === 'failed' ? 'bg-destructive' : 'bg-orange-400 animate-pulse'
                                                         }`} />
                                                     {scan.status.replace('_', ' ')}
                                                 </span>

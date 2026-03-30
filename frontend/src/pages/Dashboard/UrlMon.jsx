@@ -7,6 +7,7 @@ import {
     Terminal, Lock, ExternalLink
 } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { api } from '../../services/api';
 
 const STAGES = [
     { id: 'init', label: 'Initializing Environment', icon: Cpu },
@@ -48,7 +49,9 @@ const UrlMon = () => {
     }, []);
 
     const connectWebSocket = useCallback((jobId) => {
-        const wsUrl = `ws://localhost:8000/api/v1/scanner/ws/${jobId}`;
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "http://localhost:8000";
+        const wsProtocol = backendUrl.startsWith("https") ? "wss" : "ws";
+        const wsUrl = `${wsProtocol}://${backendUrl.replace(/^https?:\/\//, "")}/api/v1/scanner/ws/${jobId}`;
         const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
@@ -85,15 +88,7 @@ const UrlMon = () => {
         setScanData(null);
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8000/api/v1/scanner/scan', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ target: url }),
-            });
+            const response = await api.scanUrl({ target: url });
 
             if (!response.ok) throw new Error('Failed to start scan');
 

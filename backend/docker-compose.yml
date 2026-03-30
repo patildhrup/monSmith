@@ -1,0 +1,6 @@
+version: '3.9'
+
+services:
+  api-scanner:
+    build: ./app/scanner
+    image: patildhrup45/api-scanner:latest

@@ -64,7 +64,10 @@ export default function ApiEndpoints() {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const headers = { Authorization: `Bearer ${token}` };
+            const headers = { 
+                Authorization: `Bearer ${token}`,
+                'ngrok-skip-browser-warning': 'true'
+            };
 
             // 1. Try a dedicated endpoint first
             const res = await fetch(`${BACKEND}/api/v1/scanner/endpoints`, { headers });

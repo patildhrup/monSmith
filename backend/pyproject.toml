@@ -31,4 +31,5 @@ dependencies = [
     "neo4j>=6.1.0",
     "langchain-neo4j>=0.7.0",
     "langchain-huggingface>=1.2.1",
+    "pyngrok>=7.5.1",
 ]

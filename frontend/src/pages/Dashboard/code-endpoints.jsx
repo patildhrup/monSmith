@@ -170,9 +170,9 @@ function EndpointRow({ ep, isOpen, onToggle }) {
       ${ep.isZombie ? 'bg-red-500/3' : 'bg-slate-900/40'} backdrop-blur-xl`}>
 
       {/* Row header */}
-      <button
+      <div
         onClick={onToggle}
-        className="w-full flex items-center gap-3 px-5 py-3.5 text-left group"
+        className="w-full flex items-center gap-3 px-5 py-3.5 text-left group cursor-pointer"
       >
         {/* Method */}
         <MethodBadge method={ep.method} />
@@ -214,7 +214,7 @@ function EndpointRow({ ep, isOpen, onToggle }) {
         {isOpen
           ? <ChevronUp size={14} className="text-slate-500 shrink-0" />
           : <ChevronDown size={14} className="text-slate-500 shrink-0" />}
-      </button>
+      </div>
 
       {/* Expanded detail */}
       {isOpen && (

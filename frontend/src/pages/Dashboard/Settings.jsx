@@ -41,10 +41,11 @@ const Settings = () => {
         setDisconnectLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8000/api/v1/github/disconnect', {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/v1/github/disconnect`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
                 }
             });
 

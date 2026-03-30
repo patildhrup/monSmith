@@ -22,7 +22,8 @@ export const AuthProvider = ({ children }) => {
             const response = await fetch(`${API_URL}/me`, {
                 headers: { 
                     'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
                 }
             });
             
@@ -52,7 +53,7 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         const response = await fetch(`${API_URL}/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
             body: JSON.stringify({ email, password }),
         });
         const data = await response.json();
@@ -66,7 +67,7 @@ export const AuthProvider = ({ children }) => {
     const signup = async (email, password, fullName) => {
         const response = await fetch(`${API_URL}/signup`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
             body: JSON.stringify({ email, password, full_name: fullName }),
         });
         const data = await response.json();
@@ -77,7 +78,7 @@ export const AuthProvider = ({ children }) => {
     const verifyOtp = async (email, otp) => {
         const response = await fetch(`${API_URL}/verify-otp`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
             body: JSON.stringify({ email, otp }),
         });
         const data = await response.json();
@@ -91,7 +92,7 @@ export const AuthProvider = ({ children }) => {
     const googleLogin = async (idToken) => {
         const response = await fetch(`${API_URL}/google-login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
             body: JSON.stringify({ id_token: idToken }),
         });
         const data = await response.json();
@@ -105,7 +106,7 @@ export const AuthProvider = ({ children }) => {
     const forgotPassword = async (email) => {
         const response = await fetch(`${API_URL}/forgot-password`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
             body: JSON.stringify({ email }),
         });
         const data = await response.json();
@@ -116,7 +117,7 @@ export const AuthProvider = ({ children }) => {
     const resetPassword = async (email, otp, newPassword) => {
         const response = await fetch(`${API_URL}/reset-password`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
             body: JSON.stringify({ email, otp, new_password: newPassword }),
         });
         const data = await response.json();
@@ -130,7 +131,8 @@ export const AuthProvider = ({ children }) => {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify(updateData),
         });

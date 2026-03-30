@@ -5,6 +5,7 @@ import {
     Loader2, ChevronLeft, Hash, ShieldCheck, Clock
 } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { api } from '../../services/api';
 
 const Logs = () => {
     const location = useLocation();
@@ -30,12 +31,7 @@ const Logs = () => {
 
     const fetchDetails = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8000/api/v1/scanner/details/${jobId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await api.getDetails(jobId);
             if (!response.ok) throw new Error('Failed to fetch scan details');
             const data = await response.json();
             setScanDetails(data);
