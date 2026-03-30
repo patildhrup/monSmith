@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import gsap from 'gsap';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     Search, Globe, ShieldCheck, ArrowRight, Activity, Zap,
     CheckCircle2, Circle, AlertCircle, Loader2, Server,
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { api } from '../../services/api';
+import { useUrl } from '../../context/urlContext';
 
 const STAGES = [
     { id: 'init', label: 'Initializing Environment', icon: Cpu },
@@ -21,11 +23,15 @@ const STAGES = [
 
 const UrlMon = () => {
     const containerRef = useRef(null);
-    const [url, setUrl] = useState('');
-    const [isScanning, setIsScanning] = useState(false);
-    const [currentJobId, setCurrentJobId] = useState(null);
-    const [scanData, setScanData] = useState(null);
-    const [error, setError] = useState(null);
+    const navigate = useNavigate();
+    const { 
+        url, setUrl, 
+        isScanning, setIsScanning, 
+        currentJobId, setCurrentJobId, 
+        scanData, setScanData, 
+        error, setError,
+        resetScanState 
+    } = useUrl();
     const wsRef = useRef(null);
 
     useEffect(() => {
@@ -275,142 +281,33 @@ const UrlMon = () => {
                         </div>
                     )}
 
-                    {scanData?.results?.ai_report && (
-                        <div className="max-w-5xl mx-auto space-y-10 anim-fade-up py-10">
-                            {/* Report Header */}
-                            <div className="text-center space-y-4">
-                                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-semibold mb-2">
-                                    <ShieldCheck size={16} />
-                                    <span>Security Audit Completed</span>
-                                </div>
-                                <h2 className="text-4xl font-bold">Vulnerability Scan Report</h2>
-                                <p className="text-xl text-muted-foreground">Target: <span className="text-foreground underline decoration-primary/50 underline-offset-8">{url}</span></p>
-                            </div>
-
-                            {/* Risk Score & Summary */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="md:col-span-1 bg-card/50 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 text-center flex flex-col justify-center items-center">
-                                    <div className="relative w-32 h-32 flex items-center justify-center mb-4">
-                                        <svg className="w-full h-full transform -rotate-90">
-                                            <circle
-                                                cx="64" cy="64" r="58"
-                                                fill="transparent"
-                                                stroke="currentColor"
-                                                strokeWidth="12"
-                                                className="text-white/5"
-                                            />
-                                            <circle
-                                                cx="64" cy="64" r="58"
-                                                fill="transparent"
-                                                stroke="currentColor"
-                                                strokeWidth="12"
-                                                strokeDasharray={2 * Math.PI * 58}
-                                                strokeDashoffset={2 * Math.PI * 58 * (1 - scanData.results.ai_report.risk_score / 10)}
-                                                strokeLinecap="round"
-                                                className={`transition-all duration-1000 ${scanData.results.ai_report.risk_score > 7 ? 'text-destructive' :
-                                                        scanData.results.ai_report.risk_score > 4 ? 'text-orange-400' : 'text-primary'
-                                                    }`}
-                                            />
-                                        </svg>
-                                        <span className="absolute text-3xl font-bold">{scanData.results.ai_report.risk_score}</span>
-                                    </div>
-                                    <p className="text-muted-foreground font-medium uppercase tracking-widest text-xs">Risk Score</p>
-                                </div>
-                                <div className="md:col-span-2 bg-card/50 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 flex flex-col justify-center">
-                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                                        <FileText size={20} className="text-primary" />
-                                        Executive Summary
-                                    </h3>
-                                    <p className="text-lg text-muted-foreground italic leading-relaxed">
-                                        "{scanData.results.ai_report.summary}"
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Vulnerabilities List */}
-                            <div className="space-y-6">
-                                <h3 className="text-2xl font-bold flex items-center gap-2 px-4 text-green-400">
-                                    <Zap size={24} />
-                                    Detected Vulnerabilities
-                                </h3>
-
-                                {scanData.results.ai_report.vulnerabilities?.length > 0 ? (
-                                    scanData.results.ai_report.vulnerabilities.map((vuln, idx) => (
-                                        <div key={idx} className="group relative">
-                                            <div className="absolute -inset-0.5 bg-gradient-to-r from-white/10 to-white/5 rounded-[32px] blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
-                                            <div className="relative bg-[#0A0A0A] border border-white/5 rounded-[32px] overflow-hidden">
-                                                <div className="p-8">
-                                                    <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
-                                                        <div className="space-y-1">
-                                                            <div className="flex items-center gap-3">
-                                                                <h4 className="text-2xl font-bold text-foreground">{vuln.name}</h4>
-                                                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter ${vuln.severity === 'Critical' ? 'bg-destructive/20 text-destructive' :
-                                                                        vuln.severity === 'High' ? 'bg-orange-500/20 text-orange-400' :
-                                                                            vuln.severity === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                                                'bg-primary/20 text-primary'
-                                                                    }`}>
-                                                                    {vuln.severity}
-                                                                </span>
-                                                            </div>
-                                                            <p className="font-mono text-sm text-muted-foreground flex items-center gap-2">
-                                                                <Globe size={14} />
-                                                                {vuln.target}
-                                                            </p>
-                                                        </div>
-                                                        <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/5 text-xs font-mono text-muted-foreground">
-                                                            CVE: {vuln.cve || 'N/A'}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                                        <div className="space-y-6">
-                                                            <div>
-                                                                <h5 className="text-xs font-bold text-primary uppercase tracking-widest mb-2">Description</h5>
-                                                                <p className="text-muted-foreground leading-relaxed">{vuln.description}</p>
-                                                            </div>
-                                                            <div>
-                                                                <h5 className="text-xs font-bold text-destructive uppercase tracking-widest mb-2">Risk Impact</h5>
-                                                                <p className="text-muted-foreground leading-relaxed">{vuln.impact}</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="space-y-6">
-                                                            <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
-                                                                <h5 className="text-xs font-bold text-orange-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                                                    <Terminal size={14} />
-                                                                    Attack Scenario
-                                                                </h5>
-                                                                <p className="text-sm text-muted-foreground leading-relaxed font-mono">{vuln.attack_scenario}</p>
-                                                            </div>
-                                                            <div className="bg-primary/5 p-6 rounded-2xl border border-primary/10">
-                                                                <h5 className="text-xs font-bold text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
-                                                                    <Lock size={14} />
-                                                                    Remediation / Fix
-                                                                </h5>
-                                                                <p className="text-sm text-muted-foreground leading-relaxed">{vuln.fix}</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center p-20 bg-card/30 rounded-[32px] border border-dashed border-white/10">
-                                        <ShieldCheck size={48} className="text-primary mx-auto mb-4 opacity-50" />
-                                        <h4 className="text-xl font-bold">No High-Risk Vulnerabilities Found</h4>
-                                        <p className="text-muted-foreground">The digital perimeter appears to be well-protected.</p>
-                                    </div>
-                                )}
-
-                                <div className="text-center pt-10">
+                    {scanData && scanData.status === 'completed' && scanData.results && scanData.results.ai_report && (
+                        <div className="max-w-4xl mx-auto space-y-10 anim-fade-up py-10 mt-6 text-center">
+                            <div className="bg-gradient-to-br from-primary/10 to-green-500/5 backdrop-blur-xl border border-primary/20 rounded-[32px] p-12 text-center shadow-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
+                                
+                                <ShieldCheck size={64} className="mx-auto text-primary mb-6 drop-shadow-[0_0_15px_rgba(0,156,0,0.5)]" />
+                                <h3 className="text-3xl font-bold mb-4 text-foreground">Scan Successfully Completed</h3>
+                                <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
+                                    Our AI has compiled a comprehensive security report for <strong className="text-white">{url}</strong>, identifying vulnerabilities, endpoints, and actionable fixes.
+                                </p>
+                                
+                                <button
+                                    onClick={() => navigate('/security-hub')}
+                                    className="inline-flex items-center gap-3 bg-primary hover:bg-primary/90 text-primary-foreground px-10 py-5 rounded-full font-bold text-lg shadow-[0_5px_20px_rgba(0,156,0,0.4)] hover:shadow-[0_8px_30px_rgba(0,156,0,0.6)] transition-all transform hover:-translate-y-1"
+                                >
+                                    View Detailed Security Report
+                                    <ArrowRight size={24} />
+                                </button>
+                                
+                                <div className="mt-8 pt-6 border-t border-white/10">
                                     <button
                                         onClick={() => {
-                                            setScanData(null);
-                                            setUrl('');
+                                            resetScanState();
                                         }}
-                                        className="bg-white/5 hover:bg-white/10 text-foreground px-8 py-4 rounded-full font-bold border border-white/10 transition-all"
+                                        className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
                                     >
-                                        Run New Scan
+                                        Start a new scan instead
                                     </button>
                                 </div>
                             </div>

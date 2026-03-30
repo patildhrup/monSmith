@@ -13,6 +13,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             items: [
                 { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
                 { name: 'Scan URL', icon: <Globe size={20} />, path: '/url-mon' },
+                { name: 'Security Hub', icon: <ShieldAlert size={20} />, path: '/security-hub' },
                 { name: 'API Endpoints', icon: <Webhook size={20} />, path: '/api-endpoints' },
                 { name: 'Analytics', icon: <BarChart3 size={20} />, path: '/analytics' },
             ]

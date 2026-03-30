@@ -69,18 +69,12 @@ export default function ApiEndpoints() {
                 'ngrok-skip-browser-warning': 'true'
             };
 
-            // 1. Try a dedicated endpoint first
-            const res = await fetch(`${BACKEND}/api/v1/scanner/endpoints`, { headers });
-            if (res.ok) {
-                const data = await res.json();
-                setEndpoints(Array.isArray(data) ? data : data.endpoints || []);
-            } else {
-                // 2. Fall back — derive from scan history
-                const histRes = await fetch(`${BACKEND}/api/v1/scanner/history`, { headers });
-                if (!histRes.ok) throw new Error('Failed to load endpoint data');
-                const scans = await histRes.json();
-                setEndpoints(parseEndpoints(scans));
-            }
+            // Fetch scan history and derive endpoints from raw results
+            const histRes = await fetch(`${BACKEND}/api/v1/scanner/history`, { headers });
+            if (!histRes.ok) throw new Error('Failed to load endpoint data');
+            
+            const scans = await histRes.json();
+            setEndpoints(parseEndpoints(scans));
         } catch (err) {
             setError(err.message);
         } finally {

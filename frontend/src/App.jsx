@@ -13,12 +13,14 @@ import Logs from './pages/Dashboard/Logs';
 import Reports from './pages/Dashboard/Reports';
 import { AuthProvider, useAuth } from './context/authContext';
 import { RepoProvider } from './context/repoContext';
+import { UrlProvider } from './context/urlContext';
 import ApiEndpoints from './pages/Dashboard/api-endpoints';
 import Analytics from './pages/Dashboard/Analytics';
 import Repo from './pages/Dashboard/repo';
 import Alerts from './pages/Dashboard/Alerts';
 import RepoGraph from './pages/Dashboard/repo-graph';
 import CodeEndpoints from './pages/Dashboard/code-endpoints';
+import SecurityHub from './pages/Dashboard/SecurityHub.jsx';
 import NotFound from './pages/Dashboard/PageNotFound';
 
 // Per-route error boundary — prevents one crashed page from blocking the whole app
@@ -73,16 +75,18 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<E><Home /></E>} />
-          <Route path="/login" element={<PublicRoute><E><Login /></E></PublicRoute>} />
-          <Route path="/signup" element={<PublicRoute><E><Signup /></E></PublicRoute>} />
+      <UrlProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<E><Home /></E>} />
+            <Route path="/login" element={<PublicRoute><E><Login /></E></PublicRoute>} />
+            <Route path="/signup" element={<PublicRoute><E><Signup /></E></PublicRoute>} />
           <Route path="/forgot-password" element={<E><ForgotPassword /></E>} />
           <Route path="/forget-password" element={<Navigate to="/forgot-password" />} />
           <Route path="/dashboard" element={<ProtectedRoute><E><Dashboard /></E></ProtectedRoute>} />
           <Route path="/newProject" element={<ProtectedRoute><E><NewProject /></E></ProtectedRoute>} />
           <Route path="/url-mon" element={<ProtectedRoute><E><UrlMon /></E></ProtectedRoute>} />
+          <Route path="/security-hub" element={<ProtectedRoute><E><SecurityHub /></E></ProtectedRoute>} />
           <Route path="/scans" element={<ProtectedRoute><E><Scans /></E></ProtectedRoute>} />
           <Route path="/logs" element={<ProtectedRoute><E><Logs /></E></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><E><Reports /></E></ProtectedRoute>} />
@@ -94,9 +98,10 @@ function App() {
           <Route path="/repo-graph/:jobId?" element={<ProtectedRoute><E><RepoProvider><RepoGraph /></RepoProvider></E></ProtectedRoute>} />
           <Route path="/code-endpoints" element={<ProtectedRoute><E><RepoProvider><CodeEndpoints /></RepoProvider></E></ProtectedRoute>} />
           <Route path="/alerts" element={<ProtectedRoute><E><Alerts /></E></ProtectedRoute>} />
-          <Route path="*" element={<E><NotFound /></E>} />
-        </Routes>
-      </Router>
+            <Route path="*" element={<E><NotFound /></E>} />
+          </Routes>
+        </Router>
+      </UrlProvider>
     </AuthProvider>
   );
 }
