@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Home from './pages/home/home';
 import Login from './pages/Auth/login';
 import Signup from './pages/Auth/signup';
+import NewProject from './pages/Dashboard/newProject';
 import UrlMon from './pages/Dashboard/UrlMon';
 import Dashboard from './pages/Dashboard/Dashboard';
 import ForgotPassword from './pages/Auth/ForgotPassword';
@@ -80,6 +81,7 @@ function App() {
           <Route path="/forgot-password" element={<E><ForgotPassword /></E>} />
           <Route path="/forget-password" element={<Navigate to="/forgot-password" />} />
           <Route path="/dashboard" element={<ProtectedRoute><E><Dashboard /></E></ProtectedRoute>} />
+          <Route path="/newProject" element={<ProtectedRoute><E><NewProject /></E></ProtectedRoute>} />
           <Route path="/url-mon" element={<ProtectedRoute><E><UrlMon /></E></ProtectedRoute>} />
           <Route path="/scans" element={<ProtectedRoute><E><Scans /></E></ProtectedRoute>} />
           <Route path="/logs" element={<ProtectedRoute><E><Logs /></E></ProtectedRoute>} />

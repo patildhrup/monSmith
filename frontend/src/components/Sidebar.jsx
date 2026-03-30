@@ -57,7 +57,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
             <div className="mb-4">
                 <button
-                    onClick={() => navigate('/url-mon')}
+                    onClick={() => navigate('/newProject')}
                     className={`bg-primary text-primary-foreground py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(0,156,0,0.3)] hover:shadow-[0_6px_20px_rgba(0,156,0,0.4)] transition-all active:scale-95 group overflow-hidden ${isCollapsed ? 'w-12 h-12' : 'w-full px-4'}`}
                 >
                     <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300 shrink-0" />
